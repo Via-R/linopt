@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import django_heroku
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -126,3 +127,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 #     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 #     'sass_processor.finders.CssFinder',
 # ]
+
+# Activate Django-Heroku.
+django_heroku.settings(locals())
