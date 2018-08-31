@@ -19,6 +19,7 @@ django-sass==0.1
 django-sass-processor==0.7
 django-scss==0.6.1
 feedparser==5.2.1
+gunicorn==19.9.0
 html5lib==0.999999999
 httplib2==0.9.2
 idna==2.6
