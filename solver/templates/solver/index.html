@@ -1,0 +1,18 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'solver/index.css' %}">
+<form action="{% url 'solver:result' %}" method="get">
+    <ul>
+        <li>
+            <textarea name="input_text" class="field-style" placeholder="Введіть умову задачі">
+-x[1]+x[2]=>max
+|x[2]>=0
+|x[1]-4x[2]>=-2
+|x[1]+x[2]=-2
+x[1]<=5
+			</textarea>
+        </li>
+        <li>
+            <input type="submit" class="align-right" value="Розв'язати" />
+        </li>
+    </ul>
+</form>

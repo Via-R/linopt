@@ -1,0 +1,10 @@
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'solver/result.css' %}">
+<article>
+	<section>
+		<h1>Розв'язок задачі симплекс методом</h1>
+	</section>
+	<section>
+		{{ result | safe }}
+	</section>
+</article>
