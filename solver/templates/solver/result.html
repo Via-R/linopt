@@ -1,10 +1,19 @@
 {% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'solver/result.css' %}">
-<article>
-	<section>
-		<h1>Розв'язок задачі симплекс методом</h1>
-	</section>
-	<section>
-		{{ result | safe }}
-	</section>
-</article>
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ЛінОпт | Результат розв'язку задачі</title>
+	<link rel="stylesheet" type="text/css" href="{% static 'solver/result.css' %}">
+	<link rel="icon" type="image/png" href="{% static 'images/favicon.ico' %}">
+</head>
+<body>
+	<article>
+		<section>
+			<h1>Розв'язок задачі симплекс методом</h1>
+		</section>
+		<section>
+			{{ result | safe }}
+		</section>
+	</article>
+</body>
+</html>
