@@ -1,0 +1,102 @@
+$main_blue: rgba(52, 152, 219, 0.4);
+
+body {
+    background-color: #dff9fb;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+}
+
+article {
+    min-width: 750px;
+    background: #FAFAFA;
+    padding: 30px;
+    margin: 50px auto 100px auto;
+    box-shadow: 1px 1px 25px rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    border: 6px solid #305A72;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+
+    h1 {
+	    font: 16px Arial, Helvetica, sans-serif;
+		font-size: 1.7em;
+		font-weight: bold;
+		text-align: center;
+	}
+
+	table {
+		padding: 10px 40px;
+		border: 3px solid $main_blue;
+		border-radius: 8px;
+		background-color: rgba(236, 240, 241, 0.3);
+	
+		th {
+			border-bottom: 2px dashed $main_blue;
+			border-top: 2px dashed $main_blue;
+		}
+
+		thead tr {
+			border: 2px dashed $main_blue;
+		}
+
+		tbody tr:last-child td {
+			border-top: 2px dashed $main_blue;
+		}
+
+		tr:last-child td:nth-last-child(3) {
+			border-left: none;
+		}
+
+		tr:last-child td:nth-last-child(2) {
+			border-left: 2px dashed $main_blue;
+		}
+
+		td, th {
+			padding: 8px;
+			text-align: center;
+		}
+
+		td:nth-child(2), th:nth-child(2){
+			border-right: 2px dashed $main_blue;
+		}
+
+		td:nth-last-child(3), th:nth-last-child(3){
+			border-left: 2px dashed $main_blue;
+		}
+	}
+}
+
+section > div{
+    font: 16px Arial, Helvetica, sans-serif;
+	margin: 20px;
+
+    &:nth-last-child(2), &:last-child {
+		text-align: center;
+		font-size: 1.3em;
+		font-style: italic;
+	}
+}
+
+.frac {
+	display: inline-block;
+	position: relative;
+	vertical-align: middle; 
+	letter-spacing: 0.001em;
+	text-align: center;
+	margin: 3px;
+
+	span.bottom {
+		border-top: thin solid black;
+	}
+
+	span.symbol {
+		display: none;
+	}
+
+	> span { 
+		display: block; 
+		padding: 0.1em; 
+	}
+}

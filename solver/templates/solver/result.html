@@ -1,9 +1,14 @@
-{% load static %}
+<!-- {% load static %} -->
+{% load compress %}
+
 <!DOCTYPE html>
 <html>
 <head>
 	<title>ЛінОпт | Результат розв'язку задачі</title>
-	<link rel="stylesheet" type="text/css" href="{% static 'solver/result.css' %}">
+	
+	{% compress css %}
+	    <link rel="stylesheet" type="text/x-scss" href="{% static 'solver/result.scss' %}" />
+	{% endcompress %}
 	<link rel="icon" type="image/png" href="{% static 'images/favicon.ico' %}">
 </head>
 <body>

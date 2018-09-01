@@ -8,6 +8,10 @@ gunicorn = "*"
 django-heroku = "*"
 numpy = "*"
 django-favicon = "*"
+libsass = "*"
+django-compressor = "*"
+django-sass-processor = "*"
+django-libsass = "*"
 
 [dev-packages]
 
