@@ -1,10 +1,14 @@
 {% load static %}
+{% load compress %}
 <!DOCTYPE html>
 <html>
 <head>
 	<title>ЛінОпт | Розв'язання задачі лінійного програмування</title>
-	<link rel="stylesheet" type="text/css" href="{% static 'solver/index.css' %}">
+	<!-- <link rel="stylesheet" type="text/css" href="{% static 'solver/index.css' %}"> -->
 	<link rel="icon" type="image/png" href="{% static 'images/favicon.ico' %}">
+	{% compress css %}
+	    <link rel="stylesheet" type="text/x-scss" href="{% static 'solver/index.scss' %}" />
+	{% endcompress %}
 </head>
 <body>
 	<form action="{% url 'solver:result' %}" method="get">
