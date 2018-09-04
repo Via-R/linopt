@@ -21,6 +21,12 @@ form {
     flex-flow: column;
     justify-content: center;
     
+    h1 {
+        font-size: 30px;
+        // font-weight: bold;
+
+    }
+
     * {
         font: 16px Arial, Helvetica, sans-serif;
     }
@@ -35,6 +41,11 @@ form {
             margin-bottom: 10px;
             min-height: 35px;
         
+            &:first-child {
+                display: flex;
+                justify-content: center;
+            }
+
             &:last-child {
                 margin-bottom: 0px;
             }
