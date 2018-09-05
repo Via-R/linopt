@@ -24,6 +24,34 @@ class InputParser:
 				inner_text = f.read()
 		elif input_info["data_type"] == "string":
 			inner_text = input_info["data"]
+
+		elif input_info["data_type"] == "object":
+			cont = input_info["data"]
+			self.first_line_vect = list(map(Q, cont["obj_func"]))
+			self.task_type = cont["task_type"]
+			self.last_conditions = cont["last_cond"]
+			for i in range(len(self.last_conditions)):
+				self.last_conditions[i][1] = Q(self.last_conditions[i][1])
+			for i in range(len(cont["matrix"])):
+				cont["matrix"][i] = list(map(Q, cont["matrix"][i]))
+			matr_len = 0
+			for i in cont["matrix"]:
+				if len(i) > matr_len:
+					matr_len = len(i)
+			for i in range(len(cont["matrix"])):
+				if len(cont["matrix"][i]) < matr_len:
+					cont["matrix"][i] = cont["matrix"][i] + ([Q(0)] * (matr_len - len(cont["matrix"][i])))
+			if len(self.first_line_vect) < matr_len:
+				self.first_line_vect = self.first_line_vect + [Q(0)] * (matr_len - len(self.first_line_vect))
+			self.first_line_vect = np.array(self.first_line_vect)
+			self.main_matrix = np.array(cont["matrix"])
+			self.inequalities = cont["ineq"]
+			self.constants_vector = list(map(Q, cont["constants"]))
+			self.expected_error = ""
+			self.result = ""
+			self.result_list = ""
+			return
+
 		else:
 			print("Unknown format of input data")
 
@@ -231,19 +259,17 @@ class Solver:
 
 	def __init__(self, input_data):
 		reader_data = ""
+		reader_data = InputParser(input_data).get_data()
+		self.objective_function = reader_data["objective_function"]
+		self.task_type = reader_data["task_type"]
+		self.last_conditions = reader_data["last_conditions"]
+		self.matrix = reader_data["matrix"]
+		self.inequalities = reader_data["inequalities"]
+		self.constants = reader_data["constants"]
 		if input_data['data_type'] != "object":
-			reader_data = InputParser(input_data).get_data()
-			self.objective_function = reader_data["objective_function"]
-			self.task_type = reader_data["task_type"]
-			self.last_conditions = reader_data["last_conditions"]
-			self.matrix = reader_data["matrix"]
-			self.inequalities = reader_data["inequalities"]
-			self.constants = reader_data["constants"]
 			self.expected_vect = np.array(reader_data["expected_vect"])
 			self.expected_result = Q(reader_data["expected_result"]) if reader_data["expected_result"] != "" else ""
 			self.expected_error = reader_data["error"]
-		else:
-			print("This part has not been implemented yet")
 		self.result_error = ""
 		self.mute = input_data["mute"]
 		self.col_num = 0
@@ -1671,7 +1697,7 @@ class TestSimplexMethod(unittest.TestCase):
 
 
 if __name__ == "__main__":
-	unittest.main()
+	# unittest.main()
 	data_to_solve = """
 	4x[1] +4x[2] +2x[3] +4x[4] +3x[5] +x[6]=>max
 
@@ -1683,13 +1709,12 @@ if __name__ == "__main__":
 	x[1]>=0,x[2]>=0,x[3]>=0,x[4]>=0,x[5]>=0,x[6]>=0
 	"""
 	data_to_solve1 = """
-		-x[1]+x[2]=>max
-	|x[2]>=0
-	|x[1]-4x[2]>=-2
-	|x[1]+x[2]=-2
+		x[1]=>max
+	|x[1]>=0
+	
 	x[1]<=5
 	"""
-	dummy = SimplexSolver({"data_type":"string", "data": data_to_solve, "mute":False})
+	dummy = SimplexSolver({"data_type":"string", "data": data_to_solve1, "mute":False})
 	f = open("output.html", "w")
 	errors = ""
 	try:

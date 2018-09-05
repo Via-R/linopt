@@ -6,22 +6,161 @@
 	<title>ЛінОпт | Розв'язання задачі лінійного програмування</title>
 	<link rel="icon" type="image/png" href="{% static 'images/favicon.ico' %}">
 	{% compress css %}
-	    <link rel="stylesheet" type="text/x-scss" href="{% static 'solver/index.scss' %}" />
+	<link rel="stylesheet" type="text/x-scss" href="{% static 'solver/styles/index.scss' %}" />
 	{% endcompress %}
+	
+	<script type="text/javascript" src="{% static 'scripts/jquery.js' %}"></script>
+	<script type="text/javascript" src="{% static 'solver/scripts/index.js' %}"></script>
+	
 </head>
 <body>
-	<form action="{% url 'solver:result' %}" method="get">
+	<form>
 	    <ul>
 	    	<li>
-	    		<h1>Сервіс вирішення задач лінійного програмування</h1>
+	    		<h1>ЛінОпт</h1>
+	    		<sub>Сервіс вирішення задач лінійного програмування (симплекс-методом)</sub>
 	    	</li>
+	    	<li>
+	    		<p>Цільова функція:</p>
+	    		<section>
+		    		<ul id="objectiveFunc">
+			    		<li>
+			    			<div class="double-cell">
+				    			<input type="number" max="999999" name="obj_1" placeholder="0" value="">
+				    			<div>x<sub>1</sub></div>
+				    		</div>
+			    		</li>
+			    		<li>
+			    			<div class="divider">+</div>
+				    		<div class="double-cell">
+				    			<input type="number" max="999999" name="obj_2" placeholder="0" value="">
+				    			<div>x<sub>2</sub></div>
+				    		</div>
+			    		</li>
+			    		<li class="double-cell">
+			    			<div>=></div>
+			    			<select>
+			    				<option value="min">min</option>
+			    				<option value="max">max</option>
+			    			</select>
+			    		</li>
+		    		</ul>
+		    		<div class="quantity-control">
+		    			<button type="button" class="add-el">+</button>
+		    			<button type="button" class="del-el">-</button>
+		    		</div>
+		    	</section>
+	    	</li>
+	    	<li id="mainConditions">
+	    		<p>Загальні обмеження:</p>
+	    		<section>
+		    		<ul>
+			    		<li>
+			    			<div class="double-cell">
+				    			<input type="number" max="999999" name="matr1_1" placeholder="0" value="">
+				    			<div>x<sub>1</sub></div>
+				    		</div>
+				    	</li>
+				    	<li>
+				    		<div class="divider">+</div>
+				    		<div class="double-cell">
+				    			<input type="number" max="999999" name="matr1_2" placeholder="0" value="">
+				    			<div>x<sub>2</sub></div>
+				    		</div>
+			    		</li>
+			    		<li class="double-cell">
+			    			<select>
+			    				<option value=">=">&ge;</option>
+			    				<option value="<=">&le;</option>
+			    				<option value="=">=</option>
+			    			</select>
+			    			<input type="number" max="999999" name="constant" placeholder="0" value="">
+			    		</li>
+		    		</ul>
+		    		<div class="quantity-control">
+		    			<button type="button" class="add-el">+</button>
+		    			<button type="button" class="del-el">-</button>
+		    		</div>
+		    	</section>
+		    	<section>
+		    		<ul>
+			    		<li>
+			    			<div class="double-cell">
+				    			<input type="number" max="999999" name="matr2_1" placeholder="0" value="">
+				    			<div>x<sub>1</sub></div>
+				    		</div>
+				    	</li>
+				    	<li>
+				    		<div class="divider">+</div>
+				    		<div class="double-cell">
+				    			<input type="number" max="999999" name="matr2_2" placeholder="0" value="">
+				    			<div>x<sub>2</sub></div>
+				    		</div>
+			    		</li>
+			    		<li class="double-cell">
+			    			<select>
+			    				<option value=">=">&ge;</option>
+			    				<option value="<=">&le;</option>
+			    				<option value="=">=</option>
+			    			</select>
+			    			<input type="number" max="999999" name="constant" placeholder="0" value="">
+			    		</li>
+		    		</ul>
+		    		<div class="quantity-control">
+		    			<button type="button" class="add-el">+</button>
+		    			<button type="button" class="del-el">-</button>
+		    		</div>
+		    	</section>
+		    	<div class="quantity-control" id="matrControl">
+	    			<button type="button" class="add-el">+</button>
+	    			<button type="button" class="del-el">-</button>
+	    		</div>
+	    	</li>
+	    	<li>
+	    		<p>Обмеження змінних:</p>
+	    		<section>
+		    		<ul id="lastConditions">
+		    			<li>
+		    				<div class="triple-cell">
+		    					<div>x<sub>1</sub></div>
+		    					<select>
+				    				<option value=">=">&ge;</option>
+				    				<option value="<=">&le;</option>
+				    				<option value="arbitrary">?</option>
+				    			</select>
+				    			<input type="number" max="999999" name="constant" placeholder="0" value="">
+		    				</div>
+		    			</li>
+		    			<li>
+		    				<div class="triple-cell">
+		    					<div>x<sub>2</sub></div>
+		    					<select>
+				    				<option value=">=">&ge;</option>
+				    				<option value="<=">&le;</option>
+				    				<option value="arbitrary">?</option>
+				    			</select>
+				    			<input type="number" max="999999" name="constant" placeholder="0" value="">
+		    				</div>
+		    			</li>
+		    		</ul>
+		    	</section>
+	    	</li>
+	        <!-- <li>
+	            <textarea name="input_text" class="field-style" placeholder="Введіть умову задачі">-x[1]+x[2]=>max&#13;&#10;|x[2]>=0&#13;&#10;|x[1]-4x[2]>=-2&#13;&#10;|x[1]+x[2]=-2&#13;&#10;x[1]&le;5</textarea>
+	        </li> -->
 	        <li>
-	            <textarea name="input_text" class="field-style" placeholder="Введіть умову задачі">-x[1]+x[2]=>max&#13;&#10;|x[2]>=0&#13;&#10;|x[1]-4x[2]>=-2&#13;&#10;|x[1]+x[2]=-2&#13;&#10;x[1]<=5</textarea>
-	        </li>
-	        <li>
-	            <input type="submit" class="align-right" value="Розв'язати" />
+	            <button type="button" id="example" class="align-left">Приклад</button>
+	            <button type="button" id="submit" class="align-right">Розв'язати</button>
 	        </li>
 	    </ul>
+	</form>
+	<form action="{% url 'solver:result' %}" method="get" id="finalForm">
+		<input type="hidden" name="obj_func">
+		<input type="hidden" name="matrix">
+		<input type="hidden" name="ineq">
+		<input type="hidden" name="constants">
+		<input type="hidden" name="task_type">
+		<input type="hidden" name="last_cond">
 	</form>
 </body>
 </html>

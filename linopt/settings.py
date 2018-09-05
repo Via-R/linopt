@@ -149,7 +149,7 @@ STATICFILES_FINDERS = [
 COMPRESS_PRECOMPILERS = (
     ('text/x-scss', 'django_libsass.SassCompiler'),
 )
-
+COMPRESS_ENABLED = True
 # Activate Django-Heroku.
 django_heroku.settings(locals())
 db_from_env = dj_database_url.config(conn_max_age=500)

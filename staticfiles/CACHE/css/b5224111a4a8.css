@@ -1,0 +1,199 @@
+/* line 21, solver/static/solver/styles/index.scss */
+html, body {
+  height: 100%; }
+
+/* line 25, solver/static/solver/styles/index.scss */
+body {
+  background-color: #dff9fb;
+  display: flex;
+  flex-flow: column;
+  justify-content: center; }
+
+/* line 32, solver/static/solver/styles/index.scss */
+form {
+  min-width: 750px;
+  max-width: 85%;
+  background: #FAFAFA;
+  padding: 30px;
+  margin: 50px auto 100px auto;
+  box-shadow: 1px 1px 25px rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  border: 6px solid #305A72;
+  display: flex;
+  flex-flow: column;
+  justify-content: center; }
+  /* line 45, solver/static/solver/styles/index.scss */
+  form h1 {
+    font-size: 30px; }
+  /* line 51, solver/static/solver/styles/index.scss */
+  form * {
+    font: 16px Arial, Helvetica, sans-serif; }
+  /* line 55, solver/static/solver/styles/index.scss */
+  form > ul {
+    list-style: none;
+    padding: 0;
+    margin: 0; }
+    /* line 60, solver/static/solver/styles/index.scss */
+    form > ul > li {
+      display: block;
+      margin-bottom: 10px;
+      min-height: 35px; }
+      /* line 65, solver/static/solver/styles/index.scss */
+      form > ul > li:first-child {
+        display: flex;
+        flex-flow: column;
+        border-bottom: 2px solid rgba(52, 152, 219, 0.4);
+        padding-bottom: 10px; }
+      /* line 72, solver/static/solver/styles/index.scss */
+      form > ul > li:last-child {
+        margin-bottom: 0px; }
+      /* line 76, solver/static/solver/styles/index.scss */
+      form > ul > li .field-split {
+        width: 49%; }
+      /* line 80, solver/static/solver/styles/index.scss */
+      form > ul > li .field-full {
+        width: 100%; }
+      /* line 84, solver/static/solver/styles/index.scss */
+      form > ul > li input.align-left {
+        float: left; }
+      /* line 88, solver/static/solver/styles/index.scss */
+      form > ul > li input.align-right {
+        float: right; }
+      /* line 92, solver/static/solver/styles/index.scss */
+      form > ul > li textarea {
+        width: 100%;
+        min-height: 400px; }
+      /* line 97, solver/static/solver/styles/index.scss */
+      form > ul > li p {
+        font-weight: bold; }
+      /* line 101, solver/static/solver/styles/index.scss */
+      form > ul > li section {
+        display: flex; }
+        /* line 104, solver/static/solver/styles/index.scss */
+        form > ul > li section div {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center; }
+        /* line 111, solver/static/solver/styles/index.scss */
+        form > ul > li section ul {
+          flex: 4;
+          flex-wrap: wrap;
+          display: flex;
+          padding: 0px; }
+          /* line 117, solver/static/solver/styles/index.scss */
+          form > ul > li section ul li {
+            display: flex;
+            margin: 5px 0 5px 0; }
+            /* line 121, solver/static/solver/styles/index.scss */
+            form > ul > li section ul li:last-child {
+              margin-left: 5px; }
+
+/* line 135, solver/static/solver/styles/index.scss */
+.field-style {
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  padding: 8px;
+  outline: none;
+  border: 1px solid #B0CFE0;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out; }
+  /* line 147, solver/static/solver/styles/index.scss */
+  .field-style:focus {
+    box-shadow: 0 0 5px #B0CFE0;
+    border: 1px solid #B0CFE0; }
+
+/* line 153, solver/static/solver/styles/index.scss */
+.double-cell {
+  border: 3px solid rgba(9, 132, 227, 0.4);
+  display: flex;
+  border-radius: 4px;
+  background-color: rgba(9, 132, 227, 0.03); }
+  /* line 159, solver/static/solver/styles/index.scss */
+  .double-cell input {
+    min-width: 20px;
+    padding: 0 5px 0 5px;
+    border: none;
+    background-color: transparent;
+    text-align: center;
+    outline: none;
+    font-size: 1.1em;
+    vertical-align: middle;
+    line-height: 2;
+    padding-top: 3px; }
+  /* line 171, solver/static/solver/styles/index.scss */
+  .double-cell div {
+    padding: 2px 5px 0 5px;
+    border-left: 2px solid rgba(9, 132, 227, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4em; }
+  /* line 179, solver/static/solver/styles/index.scss */
+  .double-cell sub {
+    margin-bottom: -10px;
+    font-size: 0.6em; }
+  /* line 183, solver/static/solver/styles/index.scss */
+  .double-cell select {
+    background-color: transparent;
+    outline: none;
+    cursor: pointer;
+    border: none;
+    border-right: 2px solid rgba(9, 132, 227, 0.4);
+    margin: 5px 0 5px 0;
+    padding: 0 5px;
+    -webkit-appearance: none;
+    -ms-appearance: none;
+    -o-appearance: none;
+    appearance: none; }
+    /* line 194, solver/static/solver/styles/index.scss */
+    .double-cell select::-ms-expand {
+      display: none; }
+
+/* line 200, solver/static/solver/styles/index.scss */
+.divider {
+  padding: 2px 5px 0 5px;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.4em; }
+
+/* line 208, solver/static/solver/styles/index.scss */
+.quantity-control .add-el {
+  margin-right: 5px; }
+
+/* line 213, solver/static/solver/styles/index.scss */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0; }
+
+/* line 219, solver/static/solver/styles/index.scss */
+button, input[type="button"], input[type="submit"] {
+  -moz-box-shadow: inset 0px 1px 0px 0px #3985B1;
+  -webkit-box-shadow: inset 0px 1px 0px 0px #3985B1;
+  box-shadow: inset 0px 1px 0px 0px #3985B1;
+  background-color: #216288;
+  border: 1px solid #17445E;
+  display: inline-block;
+  cursor: pointer;
+  color: #FFFFFF;
+  padding: 8px 18px;
+  text-decoration: none; }
+
+/* line 232, solver/static/solver/styles/index.scss */
+button:hover:enabled, input[type="button"]:hover:enabled, input[type="submit"]:hover:enabled {
+  background: linear-gradient(to bottom, #2D77A2 5%, #337DA8 100%);
+  background-color: #28739E; }
+
+/* line 237, solver/static/solver/styles/index.scss */
+button:disabled {
+  cursor: initial;
+  background-color: #b2bec3;
+  border-color: #dfe6e9;
+  -webkit-box-shadow: 0px 1px 0px 0px rgba(178, 190, 195, 0.5);
+  -ms-box-shadow: 0px 1px 0px 0px rgba(178, 190, 195, 0.5);
+  -o-box-shadow: 0px 1px 0px 0px rgba(178, 190, 195, 0.5);
+  box-shadow: 0px 1px 0px 0px rgba(178, 190, 195, 0.5); }

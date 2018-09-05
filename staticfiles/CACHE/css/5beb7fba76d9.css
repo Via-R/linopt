@@ -1,0 +1,171 @@
+/* line 7, solver/static/solver/styles/index.scss */
+html, body {
+  height: 100%; }
+
+/* line 11, solver/static/solver/styles/index.scss */
+body {
+  background-color: #dff9fb;
+  display: flex;
+  flex-flow: column;
+  justify-content: center; }
+
+/* line 18, solver/static/solver/styles/index.scss */
+form {
+  min-width: 750px;
+  max-width: 85%;
+  background: #FAFAFA;
+  padding: 30px;
+  margin: 50px auto 100px auto;
+  box-shadow: 1px 1px 25px rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  border: 6px solid #305A72;
+  display: flex;
+  flex-flow: column;
+  justify-content: center; }
+  /* line 31, solver/static/solver/styles/index.scss */
+  form h1 {
+    font-size: 30px; }
+  /* line 37, solver/static/solver/styles/index.scss */
+  form * {
+    font: 16px Arial, Helvetica, sans-serif; }
+  /* line 41, solver/static/solver/styles/index.scss */
+  form > ul {
+    list-style: none;
+    padding: 0;
+    margin: 0; }
+    /* line 46, solver/static/solver/styles/index.scss */
+    form > ul > li {
+      display: block;
+      margin-bottom: 10px;
+      min-height: 35px; }
+      /* line 51, solver/static/solver/styles/index.scss */
+      form > ul > li:first-child {
+        display: flex;
+        flex-flow: column;
+        border-bottom: 2px solid rgba(52, 152, 219, 0.4);
+        padding-bottom: 10px; }
+      /* line 58, solver/static/solver/styles/index.scss */
+      form > ul > li:last-child {
+        margin-bottom: 0px; }
+      /* line 62, solver/static/solver/styles/index.scss */
+      form > ul > li .field-split {
+        width: 49%; }
+      /* line 66, solver/static/solver/styles/index.scss */
+      form > ul > li .field-full {
+        width: 100%; }
+      /* line 70, solver/static/solver/styles/index.scss */
+      form > ul > li input.align-left {
+        float: left; }
+      /* line 74, solver/static/solver/styles/index.scss */
+      form > ul > li input.align-right {
+        float: right; }
+      /* line 78, solver/static/solver/styles/index.scss */
+      form > ul > li textarea {
+        width: 100%;
+        min-height: 400px; }
+      /* line 83, solver/static/solver/styles/index.scss */
+      form > ul > li p {
+        font-weight: bold; }
+      /* line 87, solver/static/solver/styles/index.scss */
+      form > ul > li section {
+        display: flex; }
+        /* line 90, solver/static/solver/styles/index.scss */
+        form > ul > li section div {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center; }
+        /* line 97, solver/static/solver/styles/index.scss */
+        form > ul > li section ul {
+          flex: 4;
+          flex-wrap: wrap;
+          display: flex;
+          padding: 0px; }
+          /* line 103, solver/static/solver/styles/index.scss */
+          form > ul > li section ul li {
+            display: flex; }
+
+/* line 116, solver/static/solver/styles/index.scss */
+.field-style {
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  padding: 8px;
+  outline: none;
+  border: 1px solid #B0CFE0;
+  -webkit-transition: all 0.30s ease-in-out;
+  -moz-transition: all 0.30s ease-in-out;
+  -ms-transition: all 0.30s ease-in-out;
+  -o-transition: all 0.30s ease-in-out; }
+  /* line 128, solver/static/solver/styles/index.scss */
+  .field-style:focus {
+    box-shadow: 0 0 5px #B0CFE0;
+    border: 1px solid #B0CFE0; }
+
+/* line 134, solver/static/solver/styles/index.scss */
+.double-cell {
+  border: 3px solid rgba(9, 132, 227, 0.4);
+  display: flex;
+  margin-top: 10px;
+  border-radius: 4px;
+  background-color: rgba(9, 132, 227, 0.03); }
+  /* line 141, solver/static/solver/styles/index.scss */
+  .double-cell input {
+    min-width: 20px;
+    padding: 0 5px 0 5px;
+    border: none;
+    background-color: transparent;
+    text-align: center;
+    outline: none;
+    font-size: 1.1em;
+    vertical-align: middle;
+    line-height: 2;
+    padding-top: 3px; }
+  /* line 153, solver/static/solver/styles/index.scss */
+  .double-cell div {
+    padding: 2px 5px 0 5px;
+    border-left: 2px solid rgba(9, 132, 227, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4em; }
+  /* line 161, solver/static/solver/styles/index.scss */
+  .double-cell sub {
+    margin-bottom: -10px;
+    font-size: 0.6em; }
+
+/* line 167, solver/static/solver/styles/index.scss */
+.divider {
+  padding: 2px 5px 0 5px;
+  margin-top: 10px;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.4em; }
+
+/* line 176, solver/static/solver/styles/index.scss */
+.quantity-control .add-el {
+  margin-right: 5px; }
+
+/* line 181, solver/static/solver/styles/index.scss */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0; }
+
+/* line 187, solver/static/solver/styles/index.scss */
+button, input[type="button"], input[type="submit"] {
+  -moz-box-shadow: inset 0px 1px 0px 0px #3985B1;
+  -webkit-box-shadow: inset 0px 1px 0px 0px #3985B1;
+  box-shadow: inset 0px 1px 0px 0px #3985B1;
+  background-color: #216288;
+  border: 1px solid #17445E;
+  display: inline-block;
+  cursor: pointer;
+  color: #FFFFFF;
+  padding: 8px 18px;
+  text-decoration: none; }
+
+/* line 200, solver/static/solver/styles/index.scss */
+button:hover, input[type="button"]:hover, input[type="submit"]:hover {
+  background: linear-gradient(to bottom, #2D77A2 5%, #337DA8 100%);
+  background-color: #28739E; }

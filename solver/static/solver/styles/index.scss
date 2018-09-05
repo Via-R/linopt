@@ -1,0 +1,291 @@
+$main_blue: rgba(52, 152, 219, 0.4);
+$purple_blue: #686de0;
+$dark_blue: rgba(9, 132, 227, 1.0);
+$light_blue: rgba(9, 132, 227, 0.4);
+$transparent_blue: rgba(9, 132, 227, 0.03);
+
+@mixin box-shadow($property) {
+  -webkit-box-shadow: $property;
+      -ms-box-shadow: $property;
+      -o-box-shadow: $property;
+          box-shadow: $property;
+}
+
+@mixin appearance($property) {
+  -webkit-appearance: $property;
+      -ms-appearance: $property;
+      -o-appearance: $property;
+          appearance: $property;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: #dff9fb;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+}
+
+form {
+    min-width: 750px;
+    max-width: 85%;
+    background: #FAFAFA;
+    padding: 30px;
+    margin: 50px auto 100px auto;
+    box-shadow: 1px 1px 25px rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    border: 6px solid #305A72;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    
+    h1 {
+        font-size: 30px;
+        // font-weight: bold;
+
+    }
+
+    * {
+        font: 16px Arial, Helvetica, sans-serif;
+    }
+
+    & > ul {
+        list-style:none;
+        padding:0;
+        margin:0;
+        
+        & > li {
+            display: block;
+            margin-bottom: 10px;
+            min-height: 35px;
+
+            &:first-child{
+                display: flex;
+                flex-flow: column;
+                border-bottom: 2px solid $main_blue;
+                padding-bottom: 10px;
+            }
+
+            &:last-child {
+                margin-bottom: 0px;
+            }
+
+            .field-split {
+                width: 49%;
+            }
+
+            .field-full {
+                width: 100%;
+            }
+
+            input.align-left {
+                float:left;
+            }
+
+            .align-right {
+                float:right;
+            }
+
+            textarea{
+                width: 100%;
+                min-height: 400px;
+            }
+
+            p {
+                font-weight: bold;
+            }
+
+            section {
+                display: flex;
+
+                div {
+                    flex: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                ul {
+                    flex: 4;
+                    flex-wrap: wrap;
+                    display: flex;
+                    padding: 0px;
+
+                    li {
+                        display: flex;
+                        margin: 5px 0 5px 0;
+
+                        &:last-child {
+                            margin-left: 5px;
+                        }
+                    }
+                }
+            }
+            
+        }
+
+
+    }
+}
+
+
+.field-style {
+    box-sizing: border-box; 
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box; 
+    padding: 8px;
+    outline: none;
+    border: 1px solid #B0CFE0;
+    -webkit-transition: all 0.30s ease-in-out;
+    -moz-transition: all 0.30s ease-in-out;
+    -ms-transition: all 0.30s ease-in-out;
+    -o-transition: all 0.30s ease-in-out;
+
+    &:focus {
+        box-shadow: 0 0 5px #B0CFE0;
+        border:1px solid #B0CFE0;
+    }
+}
+
+.double-cell, .triple-cell {
+    border: 3px solid $light_blue;
+    display: flex;
+    border-radius: 4px;
+    background-color: $transparent_blue;
+
+    input {
+        min-width: 20px;
+        padding: 0 5px 0 5px;
+        border: none;
+        background-color: transparent;
+        text-align: center;
+        outline: none;
+        font-size: 1.1em;
+        vertical-align: middle;
+        line-height: 2;
+        padding-top:3px;
+    }
+    div {
+        padding: 2px 5px 0 5px; 
+        border-left: 2px solid $light_blue;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.4em;
+    }
+    select {
+        background-color: transparent;
+        outline: none;
+        cursor: pointer;
+        border: none;
+        border-right: 2px solid $light_blue;
+        margin: 5px 0 5px 0;
+        padding: 0 10px;
+        text-align: center;
+        text-align-last: center;
+        @include appearance(none);
+
+        &::-ms-expand {
+            display: none;
+        }
+    }
+    sub {
+        margin-bottom: -10px;
+        font-size: 0.6em;
+    }
+}
+
+.triple-cell {
+    div {
+        border-right: 2px solid $light_blue;
+        border-left: none;
+    }
+    select {
+        padding: 5px;
+    }
+}
+
+#objectiveFunc {
+    li:last-child {
+        div {
+            border: none;
+            text-align: center;
+            font-size: 1.1em;
+            vertical-align: middle;
+            line-height: 2;
+        }
+
+        select {
+            border-left: 2px solid $light_blue;
+            border-right: none;
+        }
+    }
+}
+
+#lastConditions {
+    li {
+        margin-right: 5px;
+
+        &:last-child {
+            margin-left: 0;
+        }
+    }
+}
+
+.divider {
+    padding: 2px 5px 0 5px; 
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4em;
+}
+
+.quantity-control {
+    .add-el {
+        margin-right: 5px; 
+    }
+}
+
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+
+button, input[type="button"], input[type="submit"] {
+    @include box-shadow(inset 0px 1px 0px 0px #3985B1);
+    background-color: #216288;
+    border: 1px solid #17445E;
+    display: inline-block;
+    cursor: pointer;
+    color: #FFFFFF;
+    padding: 8px 18px;
+    text-decoration: none;
+    outline: none;
+}
+
+button:hover:enabled, input[type="button"]:hover:enabled, input[type="submit"]:hover:enabled {
+    background: linear-gradient(to bottom, #2D77A2 5%, #337DA8 100%);
+    background-color: #28739E;
+}
+
+button:disabled{
+    cursor: initial;
+    background-color: rgba(178, 190, 195,1.0);
+    border-color: rgba(223, 230, 233,1.0);
+    @include box-shadow(0px 1px 0px 0px rgba(178, 190, 195, 0.5));
+}
+
+#finalForm{
+    display: none;
+}
+
+button:focus{
+    @include box-shadow(0 0 10px 1px #227093)
+}
+
+#matrControl{
+    margin-top: 10px;
+}
