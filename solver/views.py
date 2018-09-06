@@ -32,16 +32,9 @@ def result(request):
 		temp = i.split(" ")
 		parsed_data["last_cond"].append([temp[0], temp[1]])
 
-	print(parsed_data)
-	input_info = {"data_type": "object", "data": parsed_data, "mute": False}
-	solver = SimplexSolver(input_info)
-	errors = ""
-	try:
-		solver.solve()
-	except SolvingError as err:
-		errors = str(err).replace("\n", "<br>")
-
+	solver = SimplexSolver("object", parsed_data)
+	
 	context = { 
-		'result': "{}<p>{}</p>".format(solver.get_result(), errors)
+		'result': solver.get_result()
 	}
 	return render(request, 'solver/result.html', context)

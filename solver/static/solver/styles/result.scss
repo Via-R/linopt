@@ -68,11 +68,11 @@ article {
 	}
 }
 
-section > div, section > p{
+section > div{
     font: 16px Arial, Helvetica, sans-serif;
-	margin: 20px;
+	margin: 30px 20px 0 20px;
 
-    &:nth-last-child(2), &:last-child {
+   &:last-child {
 		text-align: center;
 		font-size: 1.3em;
 		font-style: italic;

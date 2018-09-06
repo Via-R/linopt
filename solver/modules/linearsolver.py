@@ -1,6 +1,6 @@
 import numpy as np
-import copy
-import re
+import copy, re, sys
+
 from fractions import Fraction as Q
 
 def prmatr(m):
@@ -17,16 +17,16 @@ class InputParser:
 	Повертає оброблену інформацію через метод get_data."""
 	op_list = ["<=", ">=", "<", ">", "=", "arbitrary"]
 	
-	def __init__(self, input_info):
+	def __init__(self, data_type, data, mute):
 		inner_text = ""
-		if input_info["data_type"] == "file":
-			with open(input_info["data"]) as f:
+		if data_type == "file":
+			with open(data) as f:
 				inner_text = f.read()
-		elif input_info["data_type"] == "string":
-			inner_text = input_info["data"]
+		elif data_type == "string":
+			inner_text = data
 
-		elif input_info["data_type"] == "object":
-			cont = input_info["data"]
+		elif data_type == "object":
+			cont = data
 			self.first_line_vect = list(map(Q, cont["obj_func"]))
 			self.task_type = cont["task_type"]
 			self.last_conditions = cont["last_cond"]
@@ -257,21 +257,21 @@ class Solver:
 
 	Є базовим для класів, які відповідають різним способам розв'язання."""
 
-	def __init__(self, input_data):
+	def __init__(self, data_type, data, mute):
 		reader_data = ""
-		reader_data = InputParser(input_data).get_data()
+		reader_data = InputParser(data_type, data, mute).get_data()
 		self.objective_function = reader_data["objective_function"]
 		self.task_type = reader_data["task_type"]
 		self.last_conditions = reader_data["last_conditions"]
 		self.matrix = reader_data["matrix"]
 		self.inequalities = reader_data["inequalities"]
 		self.constants = reader_data["constants"]
-		if input_data['data_type'] != "object":
+		if data_type != "object":
 			self.expected_vect = np.array(reader_data["expected_vect"])
 			self.expected_result = Q(reader_data["expected_result"]) if reader_data["expected_result"] != "" else ""
 			self.expected_error = reader_data["error"]
 		self.result_error = ""
-		self.mute = input_data["mute"]
+		self.mute = mute
 		self.col_num = 0
 		self.row_num = 0
 		self.basis = []
@@ -404,14 +404,22 @@ class Solver:
 
 	def get_result(self):
 		"""Повертає результат обчислень"""
+		errors = ""
+		try:
+			self.solve()
+		except SolvingError as err:
+			errors = str(err).replace("\n", "<br>")
 
-		return self.writer.get_logs()
+		if errors == "":
+			return self.writer.get_logs()
+		
+		return "{}<div>{}</div>".format(self.writer.get_logs(), errors)
 
 class SimplexSolver(Solver):
 	"""Виконує розв'язання задачі лінійного програмування симплекс методом."""
 
-	def __init__(self, input_data):
-		super(SimplexSolver, self).__init__(input_data)
+	def __init__(self, data_type, data, mute=False):
+		super(SimplexSolver, self).__init__(data_type, data, mute)
 		self.deltas = np.array([])
 		self.thetas = np.array([])
 		self.artificial_variables = []
@@ -1297,8 +1305,7 @@ class Logger:
 		if "big_vect" in input_data:
 			text_part = "Результат пройшов перевірку на коректність."
 			self._add_entry(text_part)
-			text_part = """
-			Нарешті, виводимо кінцевий результат:
+			text_part = """Нарешті, виводимо кінцевий результат:
 
 			Вектор з усіма змінними: {}
 			Вектор з шуканими змінними: {}
@@ -1345,7 +1352,7 @@ class TestParserMethods(unittest.TestCase):
 
 	def test_input(self):
 		"""Tests for valid parsing of the input file"""
-		dummy = InputParser({'data_type': 'string','data':test_input_string})
+		dummy = InputParser('string', test_input_string, True)
 		test_dict = {
 			"objective_function": np.array([Q(-2, 1), Q(1, 1), Q(1, 1), Q(223, 1)]),
 			"task_type": "max",
@@ -1373,7 +1380,11 @@ class TestCommonLinearMethods(unittest.TestCase):
 	def test_making_unit_basis(self):
 		"""Тест на перевірку коректної роботи методу зведення стовпчика до одиничного вектора."""
 
-		dummy = SimplexSolver(self.input_info)
+		dummy = SimplexSolver(
+			self.input_info["data_type"],
+			self.input_info["data"],
+			self.input_info["mute"]
+		)
 		dummy._make_basis_column()
 		test_matrix = np.array([
 		 	[1, 2, -3, -1],
@@ -1386,7 +1397,11 @@ class TestCommonLinearMethods(unittest.TestCase):
 	def test_making_equalities_in_conditions(self):
 		"""Тест на перевірку коректної роботи методу зведення нерівностей умов до рівностей."""
 
-		dummy = SimplexSolver(self.input_info)
+		dummy = SimplexSolver(
+			self.input_info["data_type"],
+			self.input_info["data"],
+			self.input_info["mute"]
+		)
 		for i in range(len(dummy.inequalities)):
 			if len(dummy.inequalities[i]) == 1:
 				dummy.inequalities[i] = ">=" if i % 2 == 0 else "<="
@@ -1403,7 +1418,11 @@ class TestCommonLinearMethods(unittest.TestCase):
 	def test_getting_basis_vectors_nums(self):
 		"""Тест на перевірку коректної роботи методу отримання номерів змінних, що входять в базис."""
 
-		dummy = SimplexSolver(self.input_info)
+		dummy = SimplexSolver(
+			self.input_info["data_type"],
+			self.input_info["data"],
+			self.input_info["mute"]
+		)
 		correct_matrix = np.array([
 			[2, 0, 0, 1],
 			[2, 0, 1, 0],
@@ -1423,7 +1442,11 @@ class TestCommonLinearMethods(unittest.TestCase):
 	def test_changing_variable_in_basis(self):
 		"""Тест на перевірку коректної заміни змінної в базисі."""
 
-		dummy = SimplexSolver(self.input_info)
+		dummy = SimplexSolver(
+			self.input_info["data_type"],
+			self.input_info["data"],
+			self.input_info["mute"]
+		)
 		dummy.basis = [0, 1]
 		dummy.basis_koef = [3, 3]
 		dummy.objective_function = [3, 3, 4]
@@ -1436,7 +1459,11 @@ class TestCommonLinearMethods(unittest.TestCase):
 	def test_objective_function_expanding(self):
 		"""Тест на коректне додання змінної до цільової функції."""
 
-		dummy = SimplexSolver(self.input_info)
+		dummy = SimplexSolver(
+			self.input_info["data_type"],
+			self.input_info["data"],
+			self.input_info["mute"]
+		)
 		dummy.objective_function = [1, 1]
 		new_matrix = np.array([
 			[2, 2, 1, 0],
@@ -1457,7 +1484,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_calculating_deltas(self):
 		"""Тест на правильне розрахування відносних оцінок."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.matrix = np.array([
 			[2, 2, 1, 0],
 			[2, 2, 0, 1]
@@ -1470,7 +1501,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_calculating_thetas(self):
 		"""Тест на правильне розрахування вектору з відношеннями "тета"."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.matrix = np.array([
 			[-1, 2, 1, 0],
 			[3, 1, 0, 1]
@@ -1484,7 +1519,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_finding_min_theta(self):
 		"""Тест на пошук індекса ведучого рядка."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.basis = [1, 2, 3]
 		incorrect_thetas = np.array([-1, -2, -3])
 		correct_thetas = np.array([1, -2, 3])
@@ -1496,7 +1535,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_for_choosing_column(self):
 		"""Тест на коректний вибір ведучого стовпчика."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		correct_matrix = np.array([
 			[1, -1, -2],
 			[0, -1, -2],
@@ -1528,7 +1571,7 @@ class TestSimplexMethod(unittest.TestCase):
 		|4x[1] + x[2] <=4 
 		x[1]>=0,x[2]>=0
 		"""
-		dummy = SimplexSolver({"data_type": "string", "data": info1, "mute": True})
+		dummy = SimplexSolver("string", info1,True)
 
 		dummy.initial_variables_quantity = len(dummy.matrix[0])
 		dummy._normalize_conditions()
@@ -1551,7 +1594,7 @@ class TestSimplexMethod(unittest.TestCase):
 		self.assertFalse(np.array_equal(old_matrix, dummy.matrix))
 		
 		old_matrix[1][:2] *= -1
-		dummy = SimplexSolver({"data_type": "string", "data": info2, "mute": True})
+		dummy = SimplexSolver("string", info2, True)
 
 		dummy.initial_variables_quantity = len(dummy.matrix[0])
 		dummy._normalize_conditions()
@@ -1572,7 +1615,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_adding_artificial_basis(self):
 		"""Тест на коректне додання одиничної підматриці до основної."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.matrix = np.array([
 			[2, 2],
 			[3, 3]
@@ -1597,7 +1644,7 @@ class TestSimplexMethod(unittest.TestCase):
 		|2x[1]+2x[2]<=10
 		x[1]<=2
 		"""
-		dummy = SimplexSolver({"data_type": "string", "data": info, "mute": True})
+		dummy = SimplexSolver("string", info, True)
 		dummy.initial_variables_quantity = len(dummy.matrix[0])
 		dummy._normalize_conditions()
 		correct_matrix = np.array([
@@ -1617,7 +1664,7 @@ class TestSimplexMethod(unittest.TestCase):
 			inner_text = f.read()
 			inner_text = inner_text.split("***")
 			for i in inner_text:
-				dummy = SimplexSolver({"data_type":"string", "data": i, "mute":True})
+				dummy = SimplexSolver("string", i, True)
 				try:
 					dummy.solve()
 				except SolvingError as err:
@@ -1628,7 +1675,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_substitution(self):
 		"""Перевірка на коректне повернення значень змінних після заміни."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.substitution_queue = [(0, '+=-8'), (0, '*=-2')]
 		dummy.objective_function = np.array([2, 2])
 		dummy.final_result = [Q(0)] * 2
@@ -1639,7 +1690,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_criterion(self):
 		"""Перевірка на коректне виконання критерію оптимальності."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.deltas = [1, 2, 3]
 		dummy.constants = [5, 6]
 		dummy.basis = [0, 1]
@@ -1659,7 +1714,11 @@ class TestSimplexMethod(unittest.TestCase):
 
 	def test_reset_deltas_n_thetas(self):
 		"""Перевірка на правильне повернення векторів "дельта" та "тета" до вихідних значень."""
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.thetas = [2, 2]
 		dummy.deltas = [3, 3, 3]
 		dummy._reset_deltas_n_thetas()
@@ -1669,7 +1728,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_raising_exceptions(self):
 		"""Перевірка на правильне виконання винятків у випадку помилки алгоритму."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.basis = [0, 2]
 		dummy.arbitrary_pairs = [(0, 3)]
 		dummy.objective_function = np.array([2, 3, 4, -2])
@@ -1686,7 +1749,11 @@ class TestSimplexMethod(unittest.TestCase):
 	def test_final_preparations(self):
 		"""Тест на правильний запис результатів виконання алгоритму у відповідні атрибути."""
 
-		dummy = SimplexSolver(self.input_info_main)
+		dummy = SimplexSolver(
+			self.input_info_main["data_type"],
+			self.input_info_main["data"],
+			self.input_info_main["mute"]
+		)
 		dummy.final_result = np.array([1, 2, 3])
 		dummy.objective_function = np.array([2, -3, 4])
 		dummy.initial_variables_quantity = 2
@@ -1696,31 +1763,21 @@ class TestSimplexMethod(unittest.TestCase):
 		self.assertEqual(-4, dummy.result)
 
 
-if __name__ == "__main__":
-	# unittest.main()
-	data_to_solve = """
-	4x[1] +4x[2] +2x[3] +4x[4] +3x[5] +x[6]=>max
-
-	|-3x[1] + 2x[3] + 3x[4] + 3x[5] + 4x[6] = 1
-	|3x[1] - 2x[2] + x[3] + 4x[4] + 3x[5] - 3x[6] = 2
-	|4x[1] - 2x[2] + x[3] - 4x[4] - x[5] - x[6] = 2
-	|2x[1] + 3x[2] + 3x[3] + x[4] + 2x[5] - 3x[6] = 3 
-
-	x[1]>=0,x[2]>=0,x[3]>=0,x[4]>=0,x[5]>=0,x[6]>=0
-	"""
-	data_to_solve1 = """
-		x[1]=>max
-	|x[1]>=0
+def help():
+	help_str = """Можливі аргументи:
 	
-	x[1]<=5
+	help - вивести можливі аргументи
+	test - запустити модульні тести
 	"""
-	dummy = SimplexSolver({"data_type":"string", "data": data_to_solve1, "mute":False})
-	f = open("output.html", "w")
-	errors = ""
-	try:
-		dummy.solve()
-	except SolvingError as err:
-		errors = err
+	print(help_str)
+
+if __name__ == "__main__":
+	if len(sys.argv) == 2:
+		if sys.argv[1] == "test":
+			sys.argv = sys.argv[:1]
+			unittest.main()
+		elif sys.argv[1] == "help":
+			help()
 	else:
-		print("OK")
-	f.write("{}<br><br>{}".format(dummy.get_result(), errors))
+		print("Невірна кількість аргументів")
+		help()

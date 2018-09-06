@@ -18,11 +18,12 @@ $transparent_blue: rgba(9, 132, 227, 0.03);
           appearance: $property;
 }
 
-html, body {
+html {
     height: 100%;
 }
 
 body {
+    min-height: 100%;
     background-color: #dff9fb;
     display: flex;
     flex-flow: column;
@@ -32,8 +33,9 @@ body {
 form {
     min-width: 750px;
     max-width: 85%;
+    height: auto;
     background: #FAFAFA;
-    padding: 30px;
+    padding: 20px 30px;
     margin: 50px auto 100px auto;
     box-shadow: 1px 1px 25px rgba(0, 0, 0, 0.35);
     border-radius: 10px;
@@ -44,8 +46,7 @@ form {
     
     h1 {
         font-size: 30px;
-        // font-weight: bold;
-
+        margin-top: 10px;
     }
 
     * {
@@ -70,7 +71,7 @@ form {
             }
 
             &:last-child {
-                margin-bottom: 0px;
+                margin: 20px 0 0 0;
             }
 
             .field-split {

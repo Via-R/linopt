@@ -138,6 +138,7 @@ $(document).ready(function(){
 		$("section .del-el").off().click(eventDeleteDoublecell)
 		$('input[type="number"]').off().on('input', triggerFunctionInput).trigger('input');
 
+		adjustLastConditions()
 		if(rowCount == 2)
 			$(this).parent().children(".del-el").prop("disabled", false)
 	}
@@ -145,7 +146,11 @@ $(document).ready(function(){
 	function eventDelRow(){
 		var container = $("#mainConditions section")
 		if(rowCount > 1)
-			container[container.length - 1].remove()
+			var row = $(container[container.length - 1]);
+			matrRowName = row.find("input").attr("name").split("_")[0];
+			counters[matrRowName] = 0;
+			adjustLastConditions()
+			row.remove()
 			--rowCount;
 		if(rowCount === 1)
 			$(this).prop("disabled", true)
@@ -202,10 +207,23 @@ $(document).ready(function(){
 
 	$("#example").click(function(){
 		var cont = $("#objectiveFunc")
+		while(cont.find("input[type='number']").length > 2)
+			cont.parent().find(".del-el").click()
+		if(cont.find("input[type='number']").length === 1)
+			cont.parent().find(".add-el").click()
 		cont.find("input[name='obj_1']").val(-1)
 		cont.find("input[name='obj_2']").val(1)
 		cont.find("select").val("max")
+
 		cont = $("#mainConditions")
+		while(cont.find("section").length > 1)
+			$("#matrControl").find(".del-el").click()
+		while(cont.find("section div input").length > 1)
+			cont.find("section .del-el").click()
+		
+		cont.find("section .add-el").click()
+		$("#matrControl").find(".add-el").click()
+
 		cont.find("input[name='matr1_2']").val(1)
 		cont.find("input[name='matr2_1']").val(1)
 		cont.find("input[name='matr2_2']").val(1)
@@ -215,6 +233,7 @@ $(document).ready(function(){
 		cont.find("input[name='matr3_1']").val(1)
 		cont.find("input[name='matr3_2']").val(-4)
 		cont.find("input[name='matr3_2']").parent().parent().parent().find("input[name='constant']").val(-2)
+		
 		cont = $("#lastConditions")
 		$(cont.find(".triple-cell")[0]).find("input").val(40)
 		$(cont.find(".triple-cell")[0]).find("select").val("<=")
