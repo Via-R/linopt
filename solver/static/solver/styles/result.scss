@@ -66,6 +66,12 @@ article {
 			border-left: 2px dashed $main_blue;
 		}
 	}
+
+	span {
+        font-size: 1.2em;
+        position: relative;
+        top: -2px;
+    }
 }
 
 section > div{

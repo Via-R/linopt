@@ -213,10 +213,15 @@ form {
     li:last-child {
         div {
             border: none;
-            text-align: center;
-            font-size: 1.1em;
-            vertical-align: middle;
-            line-height: 2;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            span {
+                font-size: 1.2em;
+                padding-bottom: 5px;
+            }
         }
 
         select {
