@@ -120,7 +120,7 @@ $(document).ready(function(){
 	    		</li>
 	    		<li class="double-cell">
 	    			<select>
-	    				<option value=">=;">&ge;</option>
+	    				<option value=">=">&ge;</option>
 	    				<option value="<=">&le;</option>
 	    				<option value="=">=</option>
 	    			</select>
