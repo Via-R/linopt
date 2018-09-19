@@ -237,6 +237,7 @@ $(document).ready(function(){
 		cont = $("#lastConditions")
 		$(cont.find(".triple-cell")[0]).find("input").val(40)
 		$(cont.find(".triple-cell")[0]).find("select").val("<=")
+		$(cont.find(".triple-cell")[1]).find("select").val(">=")
 		$(cont.find(".triple-cell")[1]).find("input").val(-100)
 		$(cont.find(".triple-cell")[1]).find("input").trigger("input")
 	})
