@@ -837,7 +837,8 @@ class Logger:
 		op_strings = ["<td></td>"] * len(table_info["matrix"])
 		const = ""
 		for i in [x for x in range(len(op)) if x != row]:
-			const = str(eval("-Q({})/Q({})".format(op[i], op[row])))
+			const_pre = -Q(op[i])/Q(op[row])
+			const = "- " + str(abs(const_pre)) if const_pre < 0 else str(const_pre)
 			if const == "0":
 				op_strings[i] = "<td>#</td>"
 				continue
@@ -1772,6 +1773,7 @@ def help():
 	print(help_str)
 
 if __name__ == "__main__":
+	print((Q(-2,5))/Q(-7,5))
 	if len(sys.argv) == 2:
 		if sys.argv[1] == "test":
 			sys.argv = sys.argv[:1]
