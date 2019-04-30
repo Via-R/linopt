@@ -49,7 +49,11 @@ article {
 			border-left: none;
 		}
 
-		tr:last-child td:nth-last-child(2) {
+		tr:last-child td:last-child {
+			border-top: none;
+		}
+
+		tr:last-child td:nth-last-child(3) {
 			border-left: 2px dashed $main_blue;
 		}
 
