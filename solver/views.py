@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.template import loader
 
-from solver.modules.linearsolver import SimplexSolver, SolvingError
+from solver.modules.linearsolver import DualSimplexSolver, SimplexSolver, SolvingError
 
 def index(request):
 	return render(request, 'solver/index.html')
@@ -32,7 +32,8 @@ def result(request):
 		temp = i.split(" ")
 		parsed_data["last_cond"].append([temp[0], temp[1]])
 
-	solver = SimplexSolver("object", parsed_data)
+	# solver = SimplexSolver("object", parsed_data)
+	solver = DualSimplexSolver("object", parsed_data)
 	
 	context = { 
 		'result': solver.get_result()

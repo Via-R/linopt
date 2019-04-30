@@ -3,13 +3,25 @@ import copy, re, sys
 
 from fractions import Fraction as Q
 
+def prvect(v):
+	"""Виводить вектор у звичайному вигляді, без технічних символів та слів."""
+
+	print("( ", end="")
+	for i in v:
+		print(i, end=" ")
+	print(")")
+
 def prmatr(m):
 	"""Виводить матрицю у звичайному вигляді, без технічних символів та слів."""
 
+	print("[")
 	for i in m:
-		for j in i:
-			print(j, end=" ")
-		print()
+		prvect(i)	
+	print("]")
+
+def prself(s):
+	for i in vars(s).items():
+		print(i)
 
 class InputParser:
 	"""Клас для оброблення вхідної інформації з файлу або об'єкту.
@@ -244,7 +256,7 @@ class InputParser:
 		print("Constants' vector: {}\n".format(self.constants_vector))
 
 	def print_inequalities(self):
-		"""Виводить вектор знаків рівності\нерівності з системи початкових умов."""
+		"""Виводить вектор знаків рівності або нерівності з системи початкових умов."""
 
 		print("Inequalities' vector: {}\n".format(self.inequalities))
 
@@ -277,6 +289,7 @@ class Solver:
 		self.basis = []
 		self.basis_koef = np.array([])
 		self.obj_shift = Q(0)
+		self.artificial_variables = []
 
 
 
@@ -288,7 +301,7 @@ class Solver:
 			was_max = True
 
 		self.writer.log(info=reader_data, is_max=was_max)
-
+		
 		if was_max:
 			self.objective_function *= Q(-1)
 
@@ -322,25 +335,58 @@ class Solver:
 			col=self.col_num
 		)
 
-	def _make_conditions_equalities(self):
-		"""Зводить всі нерівності умов до рівностей.
-		
+	def _make_constants_positive(self):
+		"""Робить вільні члени невід'ємними.
+
 		Не підтримуються строгі нерівності."""
+
+		for i in range(len(self.matrix)):
+			if self.inequalities[i] == "<" or self.inequalities[i] == ">":
+				raise SolvingError("Строгі нерівності не підтримуються")
+			if self.constants[i] < 0:
+				self.constants[i] *= Q(-1)
+				self.matrix[i] *= Q(-1)
+				if self.inequalities[i] != "=":
+					self.inequalities[i] = "<=" if self.inequalities[i] == ">=" else ">="
+
+	# def _is_basis_variable_present(self, ind):
+	# 	"""Перевіряє чи потрібно вводити балансну змінну"""
+
+	# 	for i in range(len(self.matrix[ind])):
+	# 		if self.matrix[ind][i] != 1:
+	# 			continue
+	# 		for j in [k for k in range(len(self.matrix)) if k != ind]:
+	# 			if self.matrix[j][i] != 0:
+	# 				break
+	# 		else:
+	# 			return True
+	# 	return False
+
+		# for j in range(len(self.matrix[i])):
+			# if self.matrix[i][j] == 1:
+				# for k in range(len(self.matrix)):
+					# pass
+
+	def _make_conditions_equalities(self, canonical=False):
+		"""Зводить всі нерівності умов до рівностей.
+
+		По замовучванню зводить систему до канонічної форми."""
 
 		was_changed = False
 		for i in range(len(self.inequalities)):
-			if self.inequalities[i] == "<" or self.inequalities[i] == ">":
-				raise SolvingError("Строгі нерівності не підтримуються")
-			elif self.inequalities[i] == ">=":
-				self.matrix[i] *= Q(-1)
-				self.constants[i] *= Q(-1)
-				self.inequalities[i] = "<="
-				was_changed = True
+			sign = 1
+			if self.inequalities[i] == ">=":
+				if not canonical:
+					self.matrix[i] *= Q(-1)
+					self.constants[i] *= Q(-1)
+				else:
+					sign *= -1
+				self.inequalities[i] = "<=" 
 			if self.inequalities[i] == "<=":
 				temp_matrix = []
 				for j in range(len(self.matrix)):
 					temp_matrix.append([Q(0)] * (len(self.matrix[0]) + 1))
-				temp_matrix[i][-1] = Q(1)
+				temp_matrix[i][-1] = sign * Q(1)
 				temp_matrix = np.array(temp_matrix)
 				temp_matrix[:,:-1] = self.matrix
 				self.matrix = temp_matrix
@@ -387,7 +433,7 @@ class Solver:
 		return result
 
 	def _set_basis_koef(self):
-		"""Записує порядкові номери та коефіцієнти базисних змінних в цільовій функції в окремі вектори."""
+		"""Оновлює порядкові номери та коефіцієнти базисних змінних в цільовій функції при переході до нового базису."""
 
 		self.basis[self.row_num] = self.col_num
 		self.basis_koef[self.row_num] = self.objective_function[self.col_num]
@@ -415,6 +461,137 @@ class Solver:
 		
 		return "{}<div>{}</div>".format(self.writer.get_logs(), errors)
 
+	def _normalize_conditions(self):
+		"""Зводить задачу до аналогічної, у якій всі змінні невід'ємні."""
+
+		self.writer.initiate("normalizing")
+		self.substitution_queue = []
+		self.arbitrary_pairs = []
+		for i in range(len(self.last_conditions)):
+			if len(self.last_conditions[i][0]) == 1:
+				return False
+
+			elif self.last_conditions[i][0] == "<=":
+				for j in range(len(self.matrix)):
+					self.matrix[j][i] *= -1
+				self.substitution_queue.insert(0, (i, "*=-1"))
+				self.objective_function[i] *= -1
+				self.last_conditions[i] = [">=", self.last_conditions[i][1] * -1]
+				self.writer.log(index=i, op="a")
+			if self.last_conditions[i][0] == ">=":
+				if self.last_conditions[i][1] != 0:
+					for j in range(len(self.matrix)):
+						self.constants[j] -= self.matrix[j][i] * self.last_conditions[i][1]
+					self.obj_shift += self.objective_function[i] * self.last_conditions[i][1]
+					self.substitution_queue.insert(0, (i, "+={}".format(self.last_conditions[i][1])))
+					self.writer.log(index=i, op="b", substitution=self.last_conditions[i][1])
+					self.last_conditions[i][1] = Q(0)
+
+
+			if self.last_conditions[i][0] == "arbitrary":
+				new_pair = i, len(self.matrix[0])
+				self.writer.log(index=i, op="c")
+				new_matrix = []
+				for j in range(len(self.matrix)):
+					new_matrix.append([Q(0)] * (len(self.matrix[0]) + 1))
+				for j in range(len(self.matrix)):
+					new_matrix[j][-1] = -self.matrix[j][i]
+
+				
+				new_matrix = np.array(new_matrix)
+				new_matrix[:,:-1] = self.matrix
+				self.matrix = new_matrix
+				
+				self.objective_function = np.append(self.objective_function, -self.objective_function[i])
+				self.last_conditions[i] = [">=", Q(0)]
+				self.last_conditions.append([">=", Q(0)])
+				self.arbitrary_pairs.append(new_pair)
+
+		if len(self.arbitrary_pairs) > 0 or len(self.substitution_queue) > 0:
+			self.writer.log(
+				matrix = self.matrix,
+				inequalities = self.inequalities,
+				constants = self.constants,
+				last_conditions = self.last_conditions,
+				objective_function = self.objective_function,
+				constant = self.obj_shift,
+				task_type = "min"
+			)
+		return True
+
+	def _get_all_table_data(self):
+		"""Повертає всю необхідну для виведення симплекс таблиці інформацію."""
+
+		return {
+			"matrix": self.matrix,
+			"objective_function": self.objective_function,
+			"basis": self.basis,
+			"basis_koef": self.basis_koef,
+			"constants": self.constants,
+			"deltas": self.deltas,
+			"thetas": self.thetas
+		}
+
+	def _cancel_subtitution(self):
+		"""Повертає початкові значення змінним, якщо відбулася заміна."""
+
+		self.writer.initiate("substitution")
+
+		self.final_result = [Q(0)] * len(self.matrix[0])
+		for i in range(len(self.basis)):
+			self.writer.log(ind=self.basis[i], val=self.constants[i])
+			self.final_result[self.basis[i]] = self.constants[i]
+
+		if self.task_type == "max":
+			self.writer.log(max=True)
+			self.objective_function *= -1
+
+		self.writer.log(sub_queue=self.substitution_queue)
+
+		prvect(self.substitution_queue)
+		prvect(self.arbitrary_pairs)
+		for i in self.substitution_queue:
+			exec("self.final_result[i[0]]" + i[1])
+			if "*" in i[1]:
+				self.objective_function[i[0]] *= Q(i[1][2:])
+
+		for i in self.arbitrary_pairs:
+			self.writer.log(arb1=i[0], arb2=i[1])
+			self.final_result[i[0]] -= self.final_result[i[1]]
+
+	def _add_artificial_basis(self):
+		"""Створює одиничну підматрицю за допомогою штучних змінних М-методом."""
+
+		self.writer.initiate("artificial_basis")
+		M = np.amax(np.array(np.append(np.append(self.matrix, self.constants), self.objective_function))) + 1
+		for i in range(len(self.basis)):
+			if self.basis[i] == -1:
+				temp_matrix = []
+				for j in range(len(self.matrix)):
+					temp_matrix.append([Q(0)] * (len(self.matrix[0]) + 1))
+				temp_matrix[i][-1] = Q(1)
+				temp_matrix = np.array(temp_matrix)
+				temp_matrix[:,:-1] = self.matrix
+				self.matrix = temp_matrix
+				self.objective_function = np.append(self.objective_function, M)
+				self.artificial_variables.append(len(self.objective_function) - 1)
+				self.last_conditions.append([">=", Q(0)])
+				self.basis[i] = len(self.objective_function) - 1
+		
+		self.writer.log(
+			m = M,
+			matrix = self.matrix,
+			objective_function = self.objective_function,
+			constant = self.obj_shift,
+			constants = self.constants,
+			last_cond = self.last_conditions,
+			task_type = "min",
+			inequalities = self.inequalities
+		)
+
+# ------ Simplex method section ------
+
+
 class SimplexSolver(Solver):
 	"""Виконує розв'язання задачі лінійного програмування симплекс методом."""
 
@@ -422,7 +599,6 @@ class SimplexSolver(Solver):
 		super(SimplexSolver, self).__init__(data_type, data, mute)
 		self.deltas = np.array([])
 		self.thetas = np.array([])
-		self.artificial_variables = []
 
 	def print_all(self):
 		"""Виводить в консоль всю доступну на даний момент інформацію про розвиток розв'язку задачі."""
@@ -460,7 +636,7 @@ class SimplexSolver(Solver):
 			if self.matrix[i][self.col_num] == 0:
 				self.thetas[i] = -1
 				self.writer.log(div1=self.constants[i], div2=self.matrix[i][self.col_num], error="zerodiv", ind=self.basis[i])
-			elif self.matrix[i][self.col_num] < 0 and self.constants[i] == 0:
+			elif self.matrix[i][self.col_num] < 0:
 				self.thetas[i] = -1
 				self.writer.log(div1=self.constants[i], div2=self.matrix[i][self.col_num], error="negative", ind=self.basis[i])
 			else:
@@ -525,119 +701,6 @@ class SimplexSolver(Solver):
 		for i in range(len(self.basis)):
 			self.basis_koef[i] = self.objective_function[self.basis[i]]
 
-	def _add_artificial_basis(self):
-		"""Створює одиничну підматрицю за допомогою штучних змінних М-методом."""
-
-		self.writer.initiate("artificial_basis")
-		M = np.amax(np.array(np.append(np.append(self.matrix, self.constants), self.objective_function))) + 1
-		for i in range(len(self.basis)):
-			if self.basis[i] == -1:
-				temp_matrix = []
-				for j in range(len(self.matrix)):
-					temp_matrix.append([Q(0)] * (len(self.matrix[0]) + 1))
-				temp_matrix[i][-1] = Q(1)
-				temp_matrix = np.array(temp_matrix)
-				temp_matrix[:,:-1] = self.matrix
-				self.matrix = temp_matrix
-				self.objective_function = np.append(self.objective_function, M)
-				self.artificial_variables.append(len(self.objective_function) - 1)
-				self.last_conditions.append([">=", Q(0)])
-				self.basis[i] = len(self.objective_function) - 1
-		
-		self.writer.log(
-			m = M,
-			matrix = self.matrix,
-			objective_function = self.objective_function,
-			constant = self.obj_shift,
-			constants = self.constants,
-			last_cond = self.last_conditions,
-			task_type = "min",
-			inequalities = self.inequalities
-		)
-
-	def _normalize_conditions(self):
-		"""Зводить задачу до аналогічної, у якій всі змінні невід'ємні."""
-
-		self.writer.initiate("normalizing")
-		self.substitution_queue = []
-		self.arbitrary_pairs = []
-		for i in range(len(self.last_conditions)):
-			if len(self.last_conditions[i][0]) == 1:
-				return False
-
-			elif self.last_conditions[i][0] == "<=":
-				for j in range(len(self.matrix)):
-					self.matrix[j][i] *= -1
-				self.substitution_queue.insert(0, (i, "*=-1"))
-				self.objective_function[i] *= -1
-				self.last_conditions[i] = [">=", self.last_conditions[i][1] * -1]
-				self.writer.log(index=i, op="a")
-			if self.last_conditions[i][0] == ">=":
-				if self.last_conditions[i][1] != 0:
-					for j in range(len(self.matrix)):
-						self.constants[j] -= self.matrix[j][i] * self.last_conditions[i][1]
-					self.obj_shift += self.objective_function[i] * self.last_conditions[i][1]
-					self.substitution_queue.insert(0, (i, "+={}".format(self.last_conditions[i][1])))
-					self.writer.log(index=i, op="b", substitution=self.last_conditions[i][1])
-					self.last_conditions[i][1] = Q(0)
-
-
-			if self.last_conditions[i][0] == "arbitrary":
-				new_pair = i, len(self.matrix[0])
-				self.writer.log(index=i, op="c")
-				new_matrix = []
-				for j in range(len(self.matrix)):
-					new_matrix.append([Q(0)] * (len(self.matrix[0]) + 1))
-				for j in range(len(self.matrix)):
-					new_matrix[j][-1] = -self.matrix[j][i]
-
-				
-				new_matrix = np.array(new_matrix)
-				new_matrix[:,:-1] = self.matrix
-				self.matrix = new_matrix
-				
-				self.objective_function = np.append(self.objective_function, -self.objective_function[i])
-				self.last_conditions[i] = [">=", Q(0)]
-				self.last_conditions.append([">=", Q(0)])
-				self.arbitrary_pairs.append(new_pair)
-
-		if len(self.arbitrary_pairs) > 0 or len(self.substitution_queue) > 0:
-			self.writer.log(
-				matrix = self.matrix,
-				inequalities = self.inequalities,
-				constants = self.constants,
-				last_conditions = self.last_conditions,
-				objective_function = self.objective_function,
-				constant = self.obj_shift,
-				task_type = "min"
-			)
-		return True
-
-	def _cancel_subtitution(self):
-		"""Повертає початкові значення змінним, якщо відбулася заміна."""
-
-		self.writer.initiate("substitution")
-
-		self.final_result = [Q(0)] * len(self.matrix[0])
-		for i in range(len(self.basis)):
-			self.writer.log(ind=self.basis[i], val=self.constants[i])
-			self.final_result[self.basis[i]] = self.constants[i]
-
-		if self.task_type == "max":
-			self.writer.log(max=True)
-			self.objective_function *= -1
-
-		self.writer.log(sub_queue=self.substitution_queue)
-
-		for i in self.substitution_queue:
-			exec("self.final_result[i[0]]" + i[1])
-			if "*" in i[1]:
-				self.objective_function[i[0]] *= Q(i[1][2:])
-
-		for i in self.arbitrary_pairs:
-			self.writer.log(arb1=i[0], arb2=i[1])
-			self.final_result[i[0]] -= self.final_result[i[1]]
-
 	def _get_col_num(self, indices_list):
 		"""Повертає індекс ведучого стовпчика, засновуючись на векторі з дельтами."""
 
@@ -689,49 +752,29 @@ class SimplexSolver(Solver):
 				self.result_error = "empty"
 				raise SolvingError("В оптимальному розв'язку присутня штучна змінна:\nДопустима область порожня")
 
-	def _get_all_table_data(self):
-		"""Повертає всю необхідну для виведення симплекс таблиці інформацію."""
+	def _check_if_result_is_empty(self):
+		"""Перевіряє чи є допустима область пустою.
 
-		return {
-			"matrix": self.matrix,
-			"objective_function": self.objective_function,
-			"basis": self.basis,
-			"basis_koef": self.basis_koef,
-			"constants": self.constants,
-			"deltas": self.deltas,
-			"thetas": self.thetas
-		}
+		Якщо область пуста, утворюється відповідний виняток."""
 
-	def _check_criterion_of_optimality(self):
-		"""Перевіряє критерій оптимальності.
-
-		Якщо критерій виконується, але наявні від'ємні вільні члени, виконується перехід до нового базису."""
-
-		self.writer.initiate("optimality")
 		for i in range(len(self.constants)):
-			if self.constants[i] < 0:
-				another_iteration = False
-				for j in range(len(self.matrix[i])):
-					if self.matrix[i][j] < 0:
-						self.row_num = i
-						self.col_num = j
-						self.writer.log(ind_row=self.basis[i], ind_col=j, another_iteration=True)
-						self._make_basis_column()
-						self._set_basis_koef()
-						another_iteration  = True
-						break
-				if another_iteration:
-					break
-				else:
-					self.result_error = "empty"
-					raise SolvingError("Неможливо отримати опорний розв'язок, всі дельта не менші нуля, але не всі значення базисних змінних більші рівні нулю:\nДопустима область порожня")
-		else:
-			self.writer.log(another_iteration=False)
-			return True
-		return False
+			if self.basis[i] in self.artificial_variables and self.constants[i] != 0:
+
+				self.result_error = "empty"
+				raise SolvingError("Допустима область пуста, в оптимальному розв'язку штучній змінній відповідає значення, відмінне від нуля.")
+
+	def _get_min_delta(self):
+		"""Знаходить мінімальну оцінку дельта."""
+
+		self.writer.initiate("min_delta")
+		result = min(self.deltas)
+		self.writer.log(
+			min_delta = result
+		)
+		return result
 
 	def _final_preparations(self):
-		"""Скасовує всі заміни та записує результат у відповідні атрибути."""
+		"""Записує результат у відповідні атрибути."""
 
 		self.writer.initiate("final")
 		self.result_vect = self.final_result[:self.initial_variables_quantity]
@@ -752,7 +795,9 @@ class SimplexSolver(Solver):
 		self.initial_variables_quantity = len(self.matrix[0])
 		if not self._normalize_conditions():
 			raise SolvingError("В заданих умовах обмеження змінних містять строгі знаки нерівностей або знак рівності - дані вхідні дані некоректні для симплекс методу")
-		self._make_conditions_equalities()
+		# prmatr(self.matrix)
+		self._make_constants_positive()
+		self._make_conditions_equalities(True)
 		self.basis = self._get_basis_vectors_nums()
 		for i in self.basis:
 			if i == -1:
@@ -762,6 +807,7 @@ class SimplexSolver(Solver):
 		for i in range(len(self.basis)):
 			self.basis_koef[i] = self.objective_function[self.basis[i]]
 		self._make_constants_positive_if_needed()
+
 		safety_counter = 0
 		while True:
 			safety_counter += 1
@@ -770,7 +816,7 @@ class SimplexSolver(Solver):
 
 			self._reset_deltas_n_thetas()
 			self._calculate_deltas()
-			min_delta = min(self.deltas)
+			min_delta = self._get_min_delta()
 			if min_delta < 0:
 				self.col_num = self._get_col_num(np.where(self.deltas == min_delta)[0].tolist())
 				if self.col_num == -1:
@@ -784,12 +830,170 @@ class SimplexSolver(Solver):
 				self._make_basis_column()
 				self._set_basis_koef()
 			else:
-				if self._check_criterion_of_optimality():
-					break
+				self._check_if_result_is_empty()
+				break
 
 		self._cancel_subtitution()
 		self._final_preparations()
 
+
+# ------ Logger class section ------
+
+
+class DualSimplexSolver(Solver):
+	"""Виконує розв'язання задачі лінійного програмування двоїстим симплекс методом."""
+
+	def __init__(self, data_type, data, mute=False):
+		super().__init__(data_type, data, mute)
+		self.deltas = np.array([])
+		self.thetas = np.array([])
+		# self.artificial_variables = []
+
+	def _set_first_basis(self, t_m, t_c):
+		upper_matr = t_m[:self.initial_variables_quantity]
+		lower_matr = t_m[self.initial_variables_quantity:]
+		upper_const = t_c[:self.initial_variables_quantity]
+		excluded_index = -1
+		included_index = -1
+		for i in range(len(lower_matr)):
+			print("!!!")
+			found_correct_basis = False
+			for j in range(len(upper_matr)):
+				ineq_matr = np.delete(upper_matr, j, axis=0)
+				ineq_const = np.delete(upper_const, j, axis=0)
+				nullifier = np.zeros(len(lower_matr), dtype=Q)
+				nullifier[i] = Q(1)
+
+				# Тут вообще хз, надо проверить как вообще может получиться ноль
+				if upper_matr[j][i] != 0:
+					nullifier[i] = upper_const[j]/upper_matr[j].dot(nullifier)
+				else:
+					continue
+				if nullifier[i] > 0:
+					continue
+				found_correct_basis = (ineq_matr.dot(nullifier) <= ineq_const).all()
+				if found_correct_basis:
+					excluded_index = self.initial_variables_quantity + i
+					included_index = j
+					break
+			if found_correct_basis:
+				break
+		self._add_deltas()
+		self.matrix[-1] *= -1
+		for i in range(len(self.basis)):
+			if self.basis[i] == excluded_index:
+				self.basis[i] = included_index
+				self.row_num = i
+				self.col_num = included_index
+				self._make_basis_column()
+				break
+		
+
+	def _choose_first_basis(self):
+		for i in self.objective_function:
+			if i < 0:
+				temp_matrix = self.matrix.T
+				temp_const = self.objective_function
+				self._set_first_basis(temp_matrix, temp_const)
+				self.matrix[-1] *= -1
+				self.constants[-1] *= -1
+				break
+		else:
+			self._add_deltas()
+
+	def _add_deltas(self):
+		self.matrix = np.append(self.matrix, [self.objective_function], axis=0)
+		self.constants = np.append(self.constants, 0)
+
+	def _choose_row(self):
+		if np.amin(self.constants[:-1]) < 0:
+			self.row_num = np.argmin(self.constants[:-1])
+		else:
+			self.row_num = -1
+
+	def _count_thetas(self):
+		self.thetas = [Q(0)] * len(self.matrix[0])
+		for i in range(len(self.matrix[self.row_num])):
+			# self.thetas[i] = abs(self.matrix[-1, i] / self.matrix[self.row_num, i]) if self.matrix[self.row_num, i] != 0 else -1
+			self.thetas[i] = abs(self.matrix[-1, i] / self.matrix[self.row_num, i]) if self.matrix[-1, i] > 0 and self.matrix[self.row_num, i] != 0 else -1
+
+	def _find_ind_of_min_theta(self):
+		max_el = np.amax(self.thetas)
+		if max_el == -1:
+			self.col_num = -1
+		else:
+			local_min = max_el
+			for i in range(len(self.thetas)):
+				if self.thetas[i] > 0 and self.thetas[i] < local_min:
+					local_min = self.thetas[i]
+					self.col_num = i
+
+	def _check_for_ambiguous_result(self):
+		"""Перевіряє чи відповідає небазисній змінній нульова дельта.
+
+		Якщо штучна змінна базисна, її пара теж вважається базисною."""
+
+		basis = set(self.basis)
+		for i in self.arbitrary_pairs:
+			if i[0] in basis:
+				basis.add(i[1])
+			elif i[1] in basis:
+				basis.add(i[0])
+		non_basis_set = set(range(len(self.objective_function))) - basis
+		for i in non_basis_set:
+			if self.matrix[-1][i] == 0:
+				self.result_error = "infinite|{}".format(self.result)
+				raise SolvingError("Базисній змінній відповідає нульова дельта:\nІснує нескінченна кількість розв'язків\nОптимальне значення цільової функції: {}".format(self.result))
+
+
+	def _final_preparations(self):
+		"""Записує результат у відповідні атрибути."""
+
+		# self.writer.initiate("final")
+		self.result_vect = self.final_result[:self.initial_variables_quantity]
+		obj_func_val = self.constants[-1] - self.obj_shift
+		self.result = obj_func_val
+		self._check_for_ambiguous_result()
+		# self._check_for_empty_allowable_area()
+
+
+	def solve(self):
+		"""Розв'язує задачу двоїстим симплекс методом."""
+
+		self.initial_variables_quantity = len(self.matrix[0])
+
+		if not self._normalize_conditions():
+			raise SolvingError("В заданих умовах обмеження змінних містять строгі знаки нерівностей або знак рівності - дані вхідні дані некоректні для виконання обчислень")
+
+		self._make_conditions_equalities()
+		self.basis = self._get_basis_vectors_nums()
+		for i in self.basis:
+			if i == -1:
+				self._add_artificial_basis()
+				break
+		self._choose_first_basis()
+		prvect(self.objective_function)
+		prvect(self.basis)
+		counter = 0
+		self._choose_row()
+		self._count_thetas()
+		while self.row_num != -1 and counter < 100:
+			self._find_ind_of_min_theta()
+			if self.col_num == -1:
+				print("Here goes some error with selecting a column")
+				break
+			self._make_basis_column()
+			self.basis[self.row_num] = self.col_num
+			self._choose_row()
+			self._count_thetas()
+			print(self.row_num)
+			counter+=1
+
+		self._cancel_subtitution()
+		self._final_preparations()
+		print("RESULT:")
+		prvect(self.result_vect)
+		print("Obj:", self.result)
 
 # ------ Logger class section ------
 
@@ -1085,10 +1289,10 @@ class Logger:
 			self.var_names.append(["x", self.counters["x"]])
 			self.counters["x"] += 1
 
-		text_part = self._bold("Матриця задачі не міститиме одиничної підматриці, тому вводимо штучний базис:<br>")
+		text_part = self._bold("Вводимо штучний базис для утворення одиничної підматриці:<br>")
 		self._add_entry(text_part)
 		text_part = """Для введення штучного базису використовуємо М-метод. Знаходимо найбільший множник серед усіх змінних та додаємо до нього одиницю.
-		Отримуємо М = {}
+		Отримаємо М = {}
 
 		Цільова функція набуває вигляду: {}
 
@@ -1153,7 +1357,7 @@ class Logger:
 		self._add_entry(text_part)
 		text_part = ""
 		if "num" in input_data:
-			text_part = "Обираємо стовпчик з мінімальною від'ємною оцінкою \"дельта\", тому ведучим може бути стовпчик, що відповідає змінній {}, обираємо його".format(self._wrap_variable(input_data["num"]))
+			text_part = "Обираємо стовпчик з мінімальною від'ємною оцінкою \"дельта\", тому ведучим може бути стовпчик, що відповідає змінній {}, обираємо його.".format(self._wrap_variable(input_data["num"]))
 		elif "no_col" in input_data and input_data["no_col"] == True:
 			text_part = "Можливий ведучий стовпчик відсутній"
 
@@ -1177,7 +1381,7 @@ class Logger:
 			if input_data["error"] == "zerodiv":
 				text_part += "- Відношення містить ділення на нуль, не розраховуємо. Встановимо значення відношення рівним -1"
 			elif input_data["error"] == "negative":
-				text_part += "- Даний рядок не може бути ведучим через те, що відповідний йому елемент стовпчика менший або рівний нулю. Встановимо значення відношення рівним -1"
+				text_part += "- Елемент стовпчика менший або рівний нулю. Встановимо значення відношення рівним -1"
 			self._add_entry(text_part)
 			return
 		text_part += "= " + str(input_data["res"])
@@ -1228,23 +1432,20 @@ class Logger:
 			text_part = "Шукаємо рядок з мінімальною оцінкою \"тета\", тому обираємо рядок, що відповідає змінній {}".format(self._wrap_variable(input_data["ind"]))
 		self._add_entry(text_part)
 
-	def _optimality(self, input_data = ""):
-		"""Виведення перевірки коректності виконання критерію оптимальності."""
+	def _min_delta(self, input_data = ""):
+		"""Виведення мінімальної оцінки дельта."""
 
 		if input_data == "":
-			text_part = self._bold("Критерій оптимальності досягнуто:")
+			text_part = self._bold("Перевіряємо критерій оптимальності:")
 			self._add_entry(text_part)
 			return
-		if input_data["another_iteration"]:
-			text_part = "Серед вільних членів наявні від'ємні. Перевіряємо рядки з від'ємними членами на наявність від'ємних елементів:"
+		if "min_delta" in input_data:
+			text_part = "Мінімальна дельта: {}. ".format(input_data["min_delta"])
+			if input_data["min_delta"] < 0:
+				text_part += "Критерій не виконується, продовжуємо роботу алгоритма."
+			else:
+				text_part += "Критерій досягнуто, всі дельта невід'ємні. Обробляємо відповідь."
 			self._add_entry(text_part)
-			text_part = "Рядок, що відповідає змінній {}, містить від'ємний елемент, тому обираємо відповідний цьому елементу стовпчик змінної {} ведучим".format(
-				self._wrap_variable(input_data["ind_row"]),
-				self._wrap_variable(input_data["ind_col"])
-			)
-		else:
-			text_part = "Всі вільні члени задовольняють умовам задачі, тому виконання алгоритму завершено."
-		self._add_entry(text_part)
 
 	def _substitution(self, input_data = ""):
 		"""Виведення результатів скасування замін змінних."""
@@ -1368,7 +1569,7 @@ class TestParserMethods(unittest.TestCase):
 			"constants": np.array([Q(4, 1), Q(0, 1), Q(-7, 1), Q(7, 2)])
 		}
 		for k, v in test_dict.items():
-			self.assertTrue(np.array_equal(v, dummy.get_data()[k]))
+			np.testing.assert_array_equal(v, dummy.get_data()[k])
 
 class TestCommonLinearMethods(unittest.TestCase):
 	"""Тести для класу Solver."""
@@ -1393,7 +1594,7 @@ class TestCommonLinearMethods(unittest.TestCase):
 		 	[0, 7, -2, -4],
 		 	[0, -6, 13, 1]
 		 ])
-		self.assertTrue(np.array_equal(test_matrix, dummy.matrix))
+		np.testing.assert_array_equal(test_matrix, dummy.matrix)
 
 	def test_making_equalities_in_conditions(self):
 		"""Тест на перевірку коректної роботи методу зведення нерівностей умов до рівностей."""
@@ -1407,14 +1608,26 @@ class TestCommonLinearMethods(unittest.TestCase):
 			if len(dummy.inequalities[i]) == 1:
 				dummy.inequalities[i] = ">=" if i % 2 == 0 else "<="
 		before_test = dummy.matrix
-		dummy._make_conditions_equalities()
+		before_test_ineq = dummy.inequalities.copy()
+		dummy._make_conditions_equalities(True)
 		self.assertTrue(len(before_test[0]) + 4, len(dummy.matrix[0]))
-		self.assertTrue(np.array_equal(np.array([
+		np.testing.assert_array_equal(np.array([
+			[1, 2, -3, -1, -1, 0, 0, 0],
+			[1, 3, -2, 0, 0, 1, 0, 0],
+			[-4, -1, 10, 0, 0, 0, -1, 0],
+			[1, -4, 10, 0, 0, 0, 0, -1]
+		]), dummy.matrix)
+
+		dummy.matrix = before_test
+		dummy.inequalities = before_test_ineq
+		dummy._make_conditions_equalities()
+		self.assertTrue(len(before_test[0]) + 3, len(dummy.matrix[0]))
+		np.testing.assert_array_equal(np.array([
 			[-1, -2, 3, 1, 1, 0, 0, 0],
 			[1, 3, -2, 0, 0, 1, 0, 0],
 			[4, 1, -10, 0, 0, 0, 1, 0],
 			[-1, 4, -10, 0, 0, 0, 0, 1]
-		]), dummy.matrix))
+		]), dummy.matrix)
 
 	def test_getting_basis_vectors_nums(self):
 		"""Тест на перевірку коректної роботи методу отримання номерів змінних, що входять в базис."""
@@ -1436,9 +1649,9 @@ class TestCommonLinearMethods(unittest.TestCase):
 			[3, 1, 0, 0]
 		])
 		dummy.matrix = correct_matrix
-		self.assertTrue(np.array_equal(np.array([3, 2, 1]), dummy._get_basis_vectors_nums()))
+		np.testing.assert_array_equal(np.array([3, 2, 1]), dummy._get_basis_vectors_nums())
 		dummy.matrix = incorrect_matrix
-		self.assertTrue(np.array_equal(np.array([-1, -1, -1, -1]), dummy._get_basis_vectors_nums()))
+		np.testing.assert_array_equal(np.array([-1, -1, -1, -1]), dummy._get_basis_vectors_nums())
 
 	def test_changing_variable_in_basis(self):
 		"""Тест на перевірку коректної заміни змінної в базисі."""
@@ -1454,8 +1667,8 @@ class TestCommonLinearMethods(unittest.TestCase):
 		dummy.col_num = 2
 		dummy.row_num = 1
 		dummy._set_basis_koef()
-		self.assertTrue(np.array_equal([0, 2], dummy.basis))
-		self.assertTrue(np.array_equal([3, 4], dummy.basis_koef))
+		np.testing.assert_array_equal([0, 2], dummy.basis)
+		np.testing.assert_array_equal([3, 4], dummy.basis_koef)
 
 	def test_objective_function_expanding(self):
 		"""Тест на коректне додання змінної до цільової функції."""
@@ -1472,7 +1685,7 @@ class TestCommonLinearMethods(unittest.TestCase):
 		])
 		dummy.matrix = new_matrix
 		dummy._expand_objective_function_if_needed()
-		self.assertTrue(np.array_equal([1, 1, 0, 0], dummy.objective_function))
+		np.testing.assert_array_equal([1, 1, 0, 0], dummy.objective_function)
 
 class TestSimplexMethod(unittest.TestCase):
 	"""Тести для класу SimplexSolver."""
@@ -1497,7 +1710,7 @@ class TestSimplexMethod(unittest.TestCase):
 		dummy.objective_function = np.array([4, 6, 0, 1])
 		dummy.basis_koef = np.array([1, 1])
 		dummy._calculate_deltas()
-		self.assertTrue(np.array_equal([0, 2, -1, 0], dummy.deltas))
+		np.testing.assert_array_equal([0, 2, -1, 0], dummy.deltas)
 
 	def test_calculating_thetas(self):
 		"""Тест на правильне розрахування вектору з відношеннями "тета"."""
@@ -1512,10 +1725,10 @@ class TestSimplexMethod(unittest.TestCase):
 			[3, 1, 0, 1]
 		])
 		dummy.row_num = 0
-		dummy.constants = np.array([-2, 0])
+		dummy.constants = np.array([2, 0])
 		dummy.basis = [2, 3]
 		dummy._calculate_thetas()
-		self.assertTrue(np.array_equal([2, 0], dummy.thetas))
+		np.testing.assert_array_equal([-1, 0], dummy.thetas)
 
 	def test_finding_min_theta(self):
 		"""Тест на пошук індекса ведучого рядка."""
@@ -1557,62 +1770,6 @@ class TestSimplexMethod(unittest.TestCase):
 		dummy.matrix = incorrect_matrix
 		self.assertEqual(-1, dummy._get_col_num([1, 2]))
 
-	def test_making_constants_positive(self):
-		"""Тест на перехід до нового базису якщо дельта не менші нуля, але серед вільних членів є від'ємні."""
-
-		info1 = """
-		3x[1] + 3x[2] => min
-		|x[1] + 4x[2] >=4
-		|4x[1] + x[2] >=4 
-		x[1]>=0,x[2]>=0
-		"""
-		info2 = """
-		3x[1] + 3x[2] => min
-		|x[1] + 4x[2] >=4
-		|4x[1] + x[2] <=4 
-		x[1]>=0,x[2]>=0
-		"""
-		dummy = SimplexSolver("string", info1,True)
-
-		dummy.initial_variables_quantity = len(dummy.matrix[0])
-		dummy._normalize_conditions()
-		dummy._make_conditions_equalities()
-		dummy.basis = dummy._get_basis_vectors_nums()
-		for i in dummy.basis:
-			if i == -1:
-				dummy._add_artificial_basis()
-				break
-		dummy.basis_koef = np.array([0] * len(dummy.basis))
-		dummy._expand_objective_function_if_needed()
-		for i in range(len(dummy.basis)):
-			dummy.basis_koef[i] = dummy.objective_function[dummy.basis[i]]
-
-		old_matrix = np.array([
-			[-1, -4, 1, 0],
-			[-4, -1, 0, 1]
-		])
-		dummy._make_constants_positive_if_needed()
-		self.assertFalse(np.array_equal(old_matrix, dummy.matrix))
-		
-		old_matrix[1][:2] *= -1
-		dummy = SimplexSolver("string", info2, True)
-
-		dummy.initial_variables_quantity = len(dummy.matrix[0])
-		dummy._normalize_conditions()
-		dummy._make_conditions_equalities()
-		dummy.basis = dummy._get_basis_vectors_nums()
-		for i in dummy.basis:
-			if i == -1:
-				dummy._add_artificial_basis()
-				break
-		dummy.basis_koef = np.array([0] * len(dummy.basis))
-		dummy._expand_objective_function_if_needed()
-		for i in range(len(dummy.basis)):
-			dummy.basis_koef[i] = dummy.objective_function[dummy.basis[i]]
-
-		dummy._make_constants_positive_if_needed()
-		self.assertTrue(np.array_equal(old_matrix, dummy.matrix))
-
 	def test_adding_artificial_basis(self):
 		"""Тест на коректне додання одиничної підматриці до основної."""
 
@@ -1629,12 +1786,12 @@ class TestSimplexMethod(unittest.TestCase):
 		dummy.constants = np.array([4, 4])
 		dummy.basis = [-1, -1]
 		dummy._add_artificial_basis()
-		self.assertTrue(np.array_equal([1, 1, 5, 5], dummy.objective_function))
-		self.assertTrue(np.array_equal([
+		np.testing.assert_array_equal([1, 1, 5, 5], dummy.objective_function)
+		np.testing.assert_array_equal([
 			[2, 2, 1, 0],
 			[3, 3, 0, 1]
-		], dummy.matrix))
-		self.assertTrue(np.array_equal([2, 3], dummy.artificial_variables))
+		], dummy.matrix)
+		np.testing.assert_array_equal([2, 3], dummy.artificial_variables)
 
 	def test_normalizing_conditions(self):
 		"""Тест на коректне зведення змінних до невід'ємних."""
@@ -1652,11 +1809,11 @@ class TestSimplexMethod(unittest.TestCase):
 			[-1, 1, -1],
 			[-2, 2, -2]
 		])
-		self.assertTrue(np.array_equal(correct_matrix, dummy.matrix))
-		self.assertTrue(np.array_equal([2, -1, 1], dummy.objective_function))
-		self.assertTrue(np.array_equal([-7, 6], dummy.constants))
-		self.assertTrue(np.array_equal([(1, 2)], dummy.arbitrary_pairs))
-		self.assertTrue(np.array_equal([(0, '+=-2'), (0, '*=-1')], dummy.substitution_queue))
+		np.testing.assert_array_equal(correct_matrix, dummy.matrix)
+		np.testing.assert_array_equal([2, -1, 1], dummy.objective_function)
+		np.testing.assert_array_equal([-7, 6], dummy.constants)
+		np.testing.assert_array_equal([(1, 2)], dummy.arbitrary_pairs)
+		np.testing.assert_array_equal([(0, '+=-2'), (0, '*=-1')], dummy.substitution_queue)
 
 	def test_for_correct_solving(self):
 		"""Тест на правильне розв'язання різних задач симплекс методом."""
@@ -1671,6 +1828,9 @@ class TestSimplexMethod(unittest.TestCase):
 				except SolvingError as err:
 					self.assertEqual(dummy.expected_error, dummy.result_error)
 				else:
+					if dummy.expected_result != dummy.result:
+						print("\n" + "-" * 42 + "\nSolving error, the anticipated answer not met in this test case:")
+						print(i)
 					self.assertEqual(dummy.expected_result, dummy.result)
 	
 	def test_substitution(self):
@@ -1686,7 +1846,7 @@ class TestSimplexMethod(unittest.TestCase):
 		dummy.final_result = [Q(0)] * 2
 		dummy.arbitrary_pairs = []
 		dummy._cancel_subtitution()
-		self.assertTrue(np.array_equal([-4, 2], dummy.objective_function))
+		np.testing.assert_array_equal([-4, 2], dummy.objective_function)
 
 	def test_criterion(self):
 		"""Перевірка на коректне виконання критерію оптимальності."""
@@ -1696,21 +1856,12 @@ class TestSimplexMethod(unittest.TestCase):
 			self.input_info_main["data"],
 			self.input_info_main["mute"]
 		)
-		dummy.deltas = [1, 2, 3]
 		dummy.constants = [5, 6]
-		dummy.basis = [0, 1]
-		dummy.basis_koef = [5, 5]
-		self.assertTrue(dummy._check_criterion_of_optimality())
-		
-		dummy.constants = [5, -6]
-		self.assertFalse(dummy._check_criterion_of_optimality())
-		
-		dummy.constants = [-5, 6]
-		dummy.matrix = np.array([
-			[1, 2],
-			[-1, 2]
-		])
-		self.assertRaises(SolvingError, dummy._check_criterion_of_optimality)
+		dummy.initial_variables_quantity = 2
+		dummy.basis = [0, 2]
+		dummy.artificial_variables = [2]
+	
+		self.assertRaises(SolvingError, dummy._check_if_result_is_empty)
 		self.assertEqual("empty", dummy.result_error)
 
 	def test_reset_deltas_n_thetas(self):
@@ -1723,8 +1874,8 @@ class TestSimplexMethod(unittest.TestCase):
 		dummy.thetas = [2, 2]
 		dummy.deltas = [3, 3, 3]
 		dummy._reset_deltas_n_thetas()
-		self.assertTrue(np.array_equal(["-"] * 2, dummy.thetas))
-		self.assertTrue(np.array_equal(["-"] * 3, dummy.deltas))
+		np.testing.assert_array_equal(["-"] * 2, dummy.thetas)
+		np.testing.assert_array_equal(["-"] * 3, dummy.deltas)
 
 	def test_raising_exceptions(self):
 		"""Перевірка на правильне виконання винятків у випадку помилки алгоритму."""
@@ -1773,8 +1924,28 @@ def help():
 	print(help_str)
 
 if __name__ == "__main__":
-	print((Q(-2,5))/Q(-7,5))
-	if len(sys.argv) == 2:
+	if len(sys.argv) == 1:
+
+		print("Okay")
+		# solver = SimplexSolver("file", 'input')
+		# f = open("output.html", "w")
+		# f.write(solver.get_result())
+
+		task = '''
+	4x[1] +4x[2] +2x[3] +4x[4] +3x[5] +x[6]=>max
+
+|-3x[1] + 2x[3] + 3x[4] + 3x[5] + 4x[6] = 1
+|3x[1] - 2x[2] + x[3] + 4x[4] + 3x[5] - 3x[6] = 2
+|4x[1] - 2x[2] + x[3] - 4x[4] - x[5] - x[6] = 2
+|2x[1] + 3x[2] + 3x[3] + x[4] + 2x[5] - 3x[6] = 3 
+
+x[1]>=0,x[2]>=0,x[3]>=0,x[4]>=0,x[5]>=0,x[6]>=0'''
+
+		solver = DualSimplexSolver("string", task, True)
+		# prmatr(solver.matrix)
+		solver.solve()
+
+	elif len(sys.argv) == 2:
 		if sys.argv[1] == "test":
 			sys.argv = sys.argv[:1]
 			unittest.main()
