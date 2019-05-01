@@ -348,6 +348,9 @@ class Solver:
 			self.matrix[i] -= chosen_row * self.matrix[i][self.col_num]
 			was_changed = True
 
+		self.thetas = ["-"] * len(self.matrix)
+		
+		self._set_basis_koef()
 		self.writer.log(
 			p_table=prev_table,
 			table=self._get_all_table_data(),
@@ -457,7 +460,8 @@ class Solver:
 		"""Оновлює порядкові номери та коефіцієнти базисних змінних в цільовій функції при переході до нового базису."""
 
 		self.basis[self.row_num] = self.col_num
-		self.basis_koef[self.row_num] = self.objective_function[self.col_num]
+		if self.writer.task_type == "simple":
+			self.basis_koef[self.row_num] = self.objective_function[self.col_num]
 
 	def _expand_objective_function_if_needed(self):
 		"""Додає в цільову функцію штучні змінні з нульовим коефіцієнтом."""
@@ -849,7 +853,7 @@ class SimplexSolver(Solver):
 					self.result_error = "unlimited"
 					raise SolvingError("Всі тета від'ємні:\nЦільова функція необмежена на допустимій області")
 				self._make_basis_column()
-				self._set_basis_koef()
+				
 			else:
 				self._check_if_result_is_empty()
 				break
@@ -982,10 +986,15 @@ class DualSimplexSolver(Solver):
 		Обирається той, якому відповідає найменший від'ємний вільний член.
 		Якщо таких немає, то повертає -1"""
 
+		self.writer.initiate("choosing_row")
 		if np.amin(self.constants[:-1]) < 0:
 			self.row_num = np.argmin(self.constants[:-1])
 		else:
 			self.row_num = -1
+		self.writer.log(
+			row=self.row_num,
+			basis=self.basis
+		)
 
 	def _count_thetas(self):
 		"""Розраховує оцінки тета.
@@ -1040,7 +1049,6 @@ class DualSimplexSolver(Solver):
 	def _final_preparations(self):
 		"""Записує результат у відповідні атрибути."""
 
-		# self.writer.initiate("final")
 		self.result_vect = self.final_result[:self.initial_variables_quantity]
 		obj_func_val = self.constants[-1] - self.obj_shift
 
@@ -1048,6 +1056,12 @@ class DualSimplexSolver(Solver):
 		self.result = obj_func_val * revert
 		prvect(self.final_result)
 		self._check_for_ambiguous_result()
+		self.writer.initiate("final")
+		self.writer.log(
+			big_vect = self.final_result,
+			vect = self.result_vect,
+			obj_val = self.result
+		)
 		# self._check_for_empty_allowable_area()
 
 	def _check_if_basis_repeats(self, basis_set):
@@ -1091,8 +1105,8 @@ class DualSimplexSolver(Solver):
 
 			self._choose_row()
 			self._count_thetas()
-			prmatr(self.matrix)
-			prvect(self.thetas)
+			# prmatr(self.matrix)
+			# prvect(self.thetas)
 			counter+=1
 
 		self._cancel_subtitution()
@@ -1500,7 +1514,7 @@ class Logger:
 		self._add_entry(text_part)
 		text_part = ""
 		if "num" in input_data:
-			text_part = "Обираємо стовпчик з мінімальною від'ємною оцінкою \"дельта\", тому ведучим може бути стовпчик, що відповідає змінній {}, обираємо його.".format(self._wrap_variable(input_data["num"]))
+			text_part = "Шукаємо стовпчик з мінімальною від'ємною оцінкою \"дельта\", тому ведучим може бути стовпчик, що відповідає змінній {}, обираємо його.".format(self._wrap_variable(input_data["num"]))
 		elif "no_col" in input_data and input_data["no_col"] == True:
 			text_part = "Можливий ведучий стовпчик відсутній"
 
@@ -1534,14 +1548,15 @@ class Logger:
 		"""Виведення операцій переходу до іншого базису."""
 
 		if input_data == "":
-			text_part = self._bold("Переходимо до іншого базису:")
+			text_part = self._bold("Перехід до іншого базису:")
 			self._add_entry(text_part)
 			return
+		text_part = "(Утворення одиничного базису на місці змінної {})".format(self._wrap_variable(input_data["col"]))
+		self._add_entry(text_part) 
 		text_part = "В базисі замінюємо змінну {} на {}, а також утворюємо одиничний вектор у ведучому стовпчику відносно ведучого елемента:".format(
 			self._wrap_variable(input_data["p_table"]["basis"][input_data["row"]]),
 			self._wrap_variable(input_data["col"])
 		)
-		self._add_entry(text_part) 
 		if input_data["op"][input_data["row"]] == 1:
 		
 			for i in [x for x in range(len(input_data["op"])) if x != input_data["row"]]:
@@ -1552,6 +1567,7 @@ class Logger:
 				self._add_entry(text_part)
 				return
 
+		self._add_entry(text_part) 
 		self._add_entry(self.draw_table(
 			input_data["p_table"],
 			[
@@ -1561,6 +1577,11 @@ class Logger:
 			],
 			input_data["op"],
 			input_data["row"]
+		))
+		text_part = "В результаті маємо таку таблицю:"
+		self._add_entry(text_part) 
+		self._add_entry(self.draw_table(
+			input_data["table"]
 		))
 
 	def _min_theta(self, input_data = ""):
@@ -1709,13 +1730,27 @@ class Logger:
 
 	def _finalize_first_compatible_basis(self, input_data = ""):
 		if input_data == "":
-			text_part = self._bold("Перехід до підхожого базису завершено:")
+			text_part = self._bold("Підхожий базис утворено.")
 			self._add_entry(text_part)
-			text_part = "Можна домножити рядок з дельтами на -1 і продовжити розрахунки."
+			text_part = "Домножуємо рядок з дельтами на -1, отримуємо таку таблицю:"
 			self._add_entry(text_part)
 			return
 		if "table" in input_data:
 			self._add_entry(self.draw_table(input_data["table"]))
+
+	def _choosing_row(self, input_data = ""):
+		if input_data == "":
+			text_part = self._bold("Обираємо ведучий рядок:")
+			self._add_entry(text_part)
+			return
+		if "row" in input_data and "basis" in input_data:
+			text_part = "Шукаємо рядок з наймешим від'ємний вільним членом."
+			self._add_entry(text_part)
+			if input_data["row"] != -1:
+				text_part = "Тому обираємо рядок, що відповідає змінній {}.".format(self._wrap_variable(input_data["basis"][input_data["row"]]))
+			else:
+				text_part = "Від'ємних вільних членів немає, роботу алгоритма завершено."
+			self._add_entry(text_part)
 
 
 # ------ Custom exception section ------
