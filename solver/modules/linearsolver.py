@@ -330,6 +330,12 @@ class Solver:
 		"""Зводить задану в атрибутах колонку до одиничного вектора з одиницею на місці обраного в атрибутах рядка."""
 
 		self.writer.initiate("basis_col")
+
+		if self.writer.task_type == "simple":
+			self.thetas = ["-"] * len(self.matrix)
+		else:
+			self.thetas = ["-"] * len(self.objective_function)
+
 		prev_table = copy.deepcopy(self._get_all_table_data())
 		operations_list = [1] * len(self.matrix)
 
@@ -348,7 +354,6 @@ class Solver:
 			self.matrix[i] -= chosen_row * self.matrix[i][self.col_num]
 			was_changed = True
 
-		self.thetas = ["-"] * len(self.matrix)
 		
 		self._set_basis_koef()
 		self.writer.log(
@@ -1001,15 +1006,28 @@ class DualSimplexSolver(Solver):
 
 		Тета - відношення оцінки дельта до елемента ведучого рядка по модулю."""
 
+		self.writer.initiate("counting_thetas")
 		self.thetas = [Q(0)] * len(self.matrix[0])
 		for i in range(len(self.matrix[self.row_num])):
-			self.thetas[i] = abs(self.matrix[-1, i] / self.matrix[self.row_num, i]) if self.matrix[-1, i] != 0 and self.matrix[self.row_num, i] != 0 else -1
+			if self.matrix[-1, i] == 0:
+				self.thetas[i] = -1
+				self.writer.log(div1=self.matrix[-1, i], div2=self.matrix[self.row_num, i], error="zerodelta", ind=i)
+			elif self.matrix[self.row_num, i] == 0:
+				self.thetas[i] = -1
+				self.writer.log(div1=self.matrix[-1, i], div2=self.matrix[self.row_num, i], error="zerodiv", ind=i)
+			else:
+				self.thetas[i] = abs(self.matrix[-1, i] / self.matrix[self.row_num, i])
+				self.writer.log(div1=self.matrix[-1, i], div2=self.matrix[self.row_num, i], res=self.thetas[i], ind=i)
+
 			if self.thetas[i] != -1:
 				chronos_vect = copy.deepcopy(self.basis)
 				chronos_vect[self.row_num] = i
 				basis_to_be_chosen = set(chronos_vect)
 				if self._check_if_basis_repeats(basis_to_be_chosen):
 					self.thetas[i] = -1
+		self.writer.log(
+			table=self._get_all_table_data(),
+		)
 
 	def _find_ind_of_min_theta(self):
 		"""Знаходить індекс мінімальної додатньої тети.
@@ -1017,7 +1035,9 @@ class DualSimplexSolver(Solver):
 		Якщо такої немає, отже всі відношення дельт до елементів ведучого
 		рядка не задовольняють умовам вибору ведучого стовпчика."""
 
+		self.writer.initiate("dual_min_theta")
 		max_el = np.amax(self.thetas)
+		local_min = -1
 		if max_el == -1:
 			self.col_num = -1
 		else:
@@ -1027,6 +1047,10 @@ class DualSimplexSolver(Solver):
 				if self.thetas[i] > 0 and self.thetas[i] < local_min:
 					local_min = self.thetas[i]
 					self.col_num = i
+		self.writer.log(
+			choice=local_min,
+			ind=self.col_num
+		)
 
 	def _check_for_ambiguous_result(self):
 		"""Перевіряє чи відповідає небазисній змінній нульова дельта.
@@ -1081,6 +1105,7 @@ class DualSimplexSolver(Solver):
 			raise SolvingError("В заданих умовах обмеження змінних містять строгі знаки нерівностей або знак рівності - дані вхідні дані некоректні для виконання обчислень")
 
 		self._make_conditions_equalities()
+		self.thetas = ["-"] * len(self.objective_function)
 		self.basis = self._get_basis_vectors_nums()
 		for i in self.basis:
 			if i == -1:
@@ -1090,8 +1115,8 @@ class DualSimplexSolver(Solver):
 		self.previous_basis_sets.append(set(self.basis))
 		counter = 0
 		self._choose_row()
-		self._count_thetas()
 		while self.row_num != -1 and counter < 100:
+			self._count_thetas()
 			self._find_ind_of_min_theta()
 			if self.col_num == -1:
 				self.result_error = "empty"
@@ -1104,7 +1129,7 @@ class DualSimplexSolver(Solver):
 			self.previous_basis_sets.append(set(self.basis))
 
 			self._choose_row()
-			self._count_thetas()
+			# self._count_thetas()
 			# prmatr(self.matrix)
 			# prvect(self.thetas)
 			counter+=1
@@ -1239,6 +1264,12 @@ class Logger:
 			for i in table_info["matrix"][-1]:
 				last_row += "<td>{}</td>".format(i)
 
+		thetas_row = "<td></td><td>&Theta;</td>" if self.task_type == "dual" else "<td></td>" * (len(table_info["matrix"][0]) + 2)
+		if self.task_type == "dual":			
+			for i in table_info["thetas"]:
+				thetas_row += "<td>{}</td>".format(i)
+
+		thetas_row += "<td></td>" * 3
 
 		if self.task_type == "simple":
 			last_row += "<td></td><td></td><td></td>"
@@ -1247,6 +1278,7 @@ class Logger:
 
 		# Склеювання всіх рядків разом в одну таблицю
 		tbody += "<tr>{}</tr>".format(last_row)
+		tbody += "<tr>{}</tr>".format(thetas_row)
 		table = """
 		<table>
 			<thead>{}</thead>
@@ -1751,6 +1783,46 @@ class Logger:
 			else:
 				text_part = "Від'ємних вільних членів немає, роботу алгоритма завершено."
 			self._add_entry(text_part)
+
+	def _counting_thetas(self, input_data = ""):
+		if input_data == "":
+			text_part = self._bold("Розраховуємо відношення елементів рядка з дельтами до елементів ведучого рядка по модулю:")
+			self._add_entry(text_part)
+			return
+
+		if "div1" in input_data and "div2" in input_data:
+			parsed_div2 = input_data["div2"] if input_data["div2"] >= 0 else "({})".format(input_data["div2"])
+			text_part = "{}: | {} / {} | ".format(self._wrap_variable(input_data["ind"]), input_data["div1"], parsed_div2)
+			
+			if "error" in input_data:
+				if input_data["error"] == "zerodiv":
+					text_part += "- Відношення містить ділення на нуль, не розраховуємо. Встановимо значення відношення рівним -1"
+				elif input_data["error"] == "zerodelta":
+					text_part += "- Відповідна дельта нульова. Встановимо значення відношення рівним -1"
+				self._add_entry(text_part)
+				return
+			elif "res" in input_data:
+				text_part += "= " + str(input_data["res"])
+				self._add_entry(text_part)
+				return
+		if "table" in input_data:
+			self._add_entry(self.draw_table(input_data["table"], [{"name": "thetas", "coords": -1}]))
+
+	def _dual_min_theta(self, input_data = ""):
+		if input_data == "":
+			text_part = self._bold("Обираємо ведучий стовпчик, що відповідає найменшому додатньому елементу рядка с тетами:")
+			self._add_entry(text_part)
+			return
+		if "ind" in input_data and "choice" in input_data:
+			if input_data["ind"] == -1:
+				text_part = "Всі тета від'ємні, стовпчик обрати неможливо."
+				self._add_entry(text_part)
+				return
+			text_part = "Найменший додатній елемент {}, йому відповідає змінна {}, обираємо її стовпчик ведучим.".format(input_data["choice"], self._wrap_variable(input_data["ind"]))
+			self._add_entry(text_part)
+			return
+
+
 
 
 # ------ Custom exception section ------

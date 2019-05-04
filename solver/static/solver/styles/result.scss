@@ -41,19 +41,19 @@ article {
 			border: 2px dashed $main_blue;
 		}
 
-		tbody tr:last-child td {
+		tbody tr:nth-last-child(2) td {
 			border-top: 2px dashed $main_blue;
 		}
 
-		tr:last-child td:nth-last-child(3) {
+		tr:nth-last-child(2) td:nth-last-child(3) {
 			border-left: none;
 		}
 
-		tr:last-child td:last-child {
+		tr:nth-last-child(2) td:last-child {
 			border-top: none;
 		}
 
-		tr:last-child td:nth-last-child(3) {
+		tr:nth-last-child(2) td:nth-last-child(3) {
 			border-left: 2px dashed $main_blue;
 		}
 

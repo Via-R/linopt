@@ -35,7 +35,12 @@ def result(request):
 	# solver = SimplexSolver("object", parsed_data)
 	solver = DualSimplexSolver("object", parsed_data)
 	
+	task_name = "двоїстим "
+	# task_name = ""
+	task_name += "симплекс"
+
 	context = { 
-		'result': solver.get_result()
+		'result': solver.get_result(),
+		'name': task_name
 	}
 	return render(request, 'solver/result.html', context)
