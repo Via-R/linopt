@@ -1,4 +1,5 @@
 $main_blue: rgba(52, 152, 219, 0.4);
+$border_style: solid;
 
 body {
     background-color: #dff9fb;
@@ -27,22 +28,37 @@ article {
 	}
 
 	table {
-		padding: 10px 40px;
+		padding: 30px 40px;
 		border: 3px solid $main_blue;
 		border-radius: 8px;
 		background-color: rgba(236, 240, 241, 0.3);
-	
+		border-spacing: 0;
+
 		th {
-			border-bottom: 2px dashed $main_blue;
-			border-top: 2px dashed $main_blue;
+			border-bottom: 2px $border_style $main_blue;
+			// border-top: 2px $border_style $main_blue;
 		}
 
-		thead tr {
-			border: 2px dashed $main_blue;
+		thead tr td {
+			border-bottom: 2px $border_style $main_blue;
+		}
+
+		thead th:first-child, tbody td:first-child {
+			border-right: 2px $border_style $main_blue;
+		}
+
+		tbody tr:nth-last-child(2), tbody tr:last-child {
+			td:first-child {
+				border-right: 0;
+			}
 		}
 
 		tbody tr:nth-last-child(2) td {
-			border-top: 2px dashed $main_blue;
+			border-top: 2px $border_style $main_blue;
+		}
+
+		&>tr:first-child td{
+			border-bottom: 2px $border_style $main_blue;
 		}
 
 		tr:nth-last-child(2) td:nth-last-child(3) {
@@ -54,7 +70,7 @@ article {
 		}
 
 		tr:nth-last-child(2) td:nth-last-child(3) {
-			border-left: 2px dashed $main_blue;
+			border-left: 2px $border_style $main_blue;
 		}
 
 		td, th {
@@ -63,11 +79,11 @@ article {
 		}
 
 		td:nth-child(2), th:nth-child(2){
-			border-right: 2px dashed $main_blue;
+			border-right: 2px $border_style $main_blue;
 		}
 
 		td:nth-last-child(3), th:nth-last-child(3){
-			border-left: 2px dashed $main_blue;
+			border-left: 2px $border_style $main_blue;
 		}
 	}
 
@@ -109,4 +125,14 @@ section > div{
 		display: block; 
 		padding: 0.1em; 
 	}
+}
+
+.empty-row{
+	display: none;
+}
+.empty-cell {
+	display: block;
+	padding: 0;
+	width: 0;
+	border: 0;
 }

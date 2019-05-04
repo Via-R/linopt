@@ -1009,12 +1009,12 @@ class DualSimplexSolver(Solver):
 		self.writer.initiate("counting_thetas")
 		self.thetas = [Q(0)] * len(self.matrix[0])
 		for i in range(len(self.matrix[self.row_num])):
-			if self.matrix[-1, i] == 0:
-				self.thetas[i] = -1
-				self.writer.log(div1=self.matrix[-1, i], div2=self.matrix[self.row_num, i], error="zerodelta", ind=i)
-			elif self.matrix[self.row_num, i] == 0:
+			if self.matrix[self.row_num, i] == 0:
 				self.thetas[i] = -1
 				self.writer.log(div1=self.matrix[-1, i], div2=self.matrix[self.row_num, i], error="zerodiv", ind=i)
+			elif self.matrix[-1, i] == 0:
+				self.thetas[i] = -1
+				self.writer.log(div1=self.matrix[-1, i], div2=self.matrix[self.row_num, i], error="zerodelta", ind=i)
 			else:
 				self.thetas[i] = abs(self.matrix[-1, i] / self.matrix[self.row_num, i])
 				self.writer.log(div1=self.matrix[-1, i], div2=self.matrix[self.row_num, i], res=self.thetas[i], ind=i)
@@ -1180,6 +1180,9 @@ class Logger:
 
 		table_info = copy.deepcopy(table_info)
 
+		last_tr_class = "class='empty-row'"
+		last_td_class = "class='empty-cell'"
+
 		# Утворення списку елементів для подальшого виділення
 		to_emphasize = []
 		for i in emphasize_list:
@@ -1191,7 +1194,7 @@ class Logger:
 				to_emphasize.append({"name": i["name"], "coords": i["coords"]})
 
 		# Дописування операцій над рядками в останню колонку
-		op_strings = ["<td></td>"] * len(table_info["matrix"])
+		op_strings = ["<td {}></td>".format(last_td_class)] * len(table_info["matrix"])
 		const = ""
 		for i in [x for x in range(len(op)) if x != row]:
 			const_pre = -Q(op[i])/Q(op[row])
@@ -1209,7 +1212,8 @@ class Logger:
 				op[row] = "({})".format(op[row])
 			# &#247; is ÷
 			op_strings[row] = "<td>#</td>" if op[row] == 1 else "<td>&#247; {}</td>".format(op[row])
-		op_strings = ["<td></td>", "<td></td>"] + op_strings
+		op_strings = ["<td {}></td>".format(last_td_class)] * 2 + op_strings
+
 		for i in range(len(table_info["basis"])):
 			table_info["basis"][i] = self._wrap_variable(table_info["basis"][i])
 
@@ -1233,30 +1237,33 @@ class Logger:
 		first_row += "<td></td><td></td>" + op_strings[0]
 
 		# Задання рядку з назвами колонок
-		head_row = "<th>Z</th><th>Б</th>" if self.task_type == "simple" else "<th></th><th>Б</th>"
+		head_row = "<th>Z</th><th>Б</th>" if self.task_type == "simple" else "<th {}></th><th>Б</th>".format(last_td_class)
 		for i in range(len(table_info["objective_function"])):
 			head_el = table_info["objective_function"][i] if self.task_type == "simple" else self._wrap_variable(i)
 			head_row += "<th>{}</th>".format(head_el)
 		
-		head_row += "<th>&beta;</th>" + ( "<th>&theta;</th>" if self.task_type == "simple" else "<th></th>" ) + op_strings[1]
+		head_row += "<th>&beta;</th>" + ( "<th>&theta;</th>" if self.task_type == "simple" else "<th {}></th>".format(last_td_class) ) + op_strings[1]
 
-		thead = "<tr>{}</tr><tr>{}</tr>".format(first_row, head_row)
+		appended_class = last_tr_class if self.task_type == "dual" else ""
+		thead = "<tr {}>{}</tr><tr>{}</tr>".format(appended_class, first_row, head_row)
 
 		# Утворення записів основних рядків таблиці
 		tbody = ""
 		deltas_in_the_last_row = 1 if self.task_type == "dual" else 0
 		for i in range(len(table_info["matrix"]) - deltas_in_the_last_row):
-			row = "<td>{}</td>".format(table_info["basis_koef"][i]) if self.task_type == "simple" else "<td></td>"
+			row = "<td>{}</td>".format(table_info["basis_koef"][i]) if self.task_type == "simple" else "<td {}></td>".format(last_td_class)
 			row += "<td>{}</td>".format(table_info["basis"][i])
 			for j in range(len(table_info["matrix"][i])):
 				row += "<td>{}</td>".format(table_info["matrix"][i][j])
 			row += "<td>{}</td>".format(table_info["constants"][i])
-			row += "<td>{}</td>".format(table_info["thetas"][i])  if self.task_type == "simple" else "<td></td>" 
+			row += "<td>{}</td>".format(table_info["thetas"][i])  if self.task_type == "simple" else "<td {}></td>".format(last_td_class)
 			row += op_strings[i + 2]
 			tbody += "<tr>{}</tr>".format(row)
 
+
 		# Додання рядку з дельтами
-		last_row = "<td></td><td>&Delta;</td>"
+		appended_class = last_td_class if self.task_type == "dual" else ""
+		last_row = "<td {}></td><td>&Delta;</td>".format(appended_class)
 		if self.task_type == "simple":
 			for i in table_info["deltas"]:
 				last_row += "<td>{}</td>".format(i)
@@ -1264,21 +1271,23 @@ class Logger:
 			for i in table_info["matrix"][-1]:
 				last_row += "<td>{}</td>".format(i)
 
-		thetas_row = "<td></td><td>&Theta;</td>" if self.task_type == "dual" else "<td></td>" * (len(table_info["matrix"][0]) + 2)
+		# Додання рядку з тетами в кінець таблиці (двоїстий метод)
+		thetas_row = "<td {}></td><td>&Theta;</td>".format(appended_class) if self.task_type == "dual" else "<td {}></td>".format(last_td_class) * (len(table_info["matrix"][0]) + 2)
 		if self.task_type == "dual":			
 			for i in table_info["thetas"]:
 				thetas_row += "<td>{}</td>".format(i)
 
-		thetas_row += "<td></td>" * 3
+		thetas_row += "<td></td>" + "<td {}></td>".format(last_td_class) * 2
 
 		if self.task_type == "simple":
 			last_row += "<td></td><td></td><td></td>"
 		elif self.task_type == "dual":
-			last_row += "<td>{}</td><td>{}</td>".format(table_info["constants"][-1], op_strings[-1])
+			last_row += "<td>{}</td><td {}></td>{}".format(table_info["constants"][-1], last_td_class, op_strings[-1])
 
 		# Склеювання всіх рядків разом в одну таблицю
+		appended_class = last_tr_class if self.task_type == "simple" else ""
 		tbody += "<tr>{}</tr>".format(last_row)
-		tbody += "<tr>{}</tr>".format(thetas_row)
+		tbody += "<tr {}>{}</tr>".format(appended_class, thetas_row)
 		table = """
 		<table>
 			<thead>{}</thead>
