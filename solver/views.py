@@ -32,11 +32,11 @@ def result(request):
 		temp = i.split(" ")
 		parsed_data["last_cond"].append([temp[0], temp[1]])
 
-	# solver = SimplexSolver("object", parsed_data)
-	solver = DualSimplexSolver("object", parsed_data)
+	method_name = data["method_name"]
+
+	solver = SimplexSolver("object", parsed_data) if method_name == "simple" else DualSimplexSolver("object", parsed_data)
 	
-	task_name = "двоїстим "
-	# task_name = ""
+	task_name = "" if method_name == "simple" else "двоїстим "
 	task_name += "симплекс"
 
 	context = { 

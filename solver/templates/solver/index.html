@@ -18,9 +18,9 @@
 <body>
 	<form>
 	    <ul>
-	    	<li>
+	    	<li id="headerLine">
 	    		<h1>ЛінОпт</h1>
-	    		<sub>Сервіс вирішення задач лінійного програмування (симплекс-метод)</sub>
+	    		<sub>Сервіс вирішення задач лінійного програмування (<a href="#" name="simple" class="chosen-type">симплекс метод</a>, <a href="#" name="dual">двоїстий симплекс метод</a>)</sub>
 	    	</li>
 	    	<li>
 	    		<p>Цільова функція:</p>
@@ -39,9 +39,9 @@
 				    			<div>x<sub>2</sub></div>
 				    		</div>
 			    		</li>
-			    		<li class="double-cell">
+			    		<li class="double-cell" id="mainDoubleCell">
 			    			<div>
-				    			<span>&rarr;</span>
+				    			<span>&#x21A6;</span>
 			    			</div>
 			    			<select>
 			    				<option value="min">min</option>
@@ -152,9 +152,15 @@
 	        <!-- <li>
 	            <textarea name="input_text" class="field-style" placeholder="Введіть умову задачі">-x[1]+x[2]=>max&#13;&#10;|x[2]>=0&#13;&#10;|x[1]-4x[2]>=-2&#13;&#10;|x[1]+x[2]=-2&#13;&#10;x[1]&le;5</textarea>
 	        </li> -->
-	        <li>
-	            <button type="button" id="example" class="align-left">Приклад</button>
-	            <button type="button" id="submit" class="align-right">Розв'язати</button>
+	        <li id="lastLine">
+	            <button type="button" id="submit">Розв'язати</button>
+	            <div>
+		            <div id="examplesText"><span>Приклади:</span></div>
+		            <button type="button" id="exampleRegular">1</button>
+		            <button type="button" id="exampleBig">2</button>
+		            <button type="button" id="exampleError">3</button>
+		            <button type="button" id="exampleSmall">4</button>
+		        </div>
 	        </li>
 	    </ul>
 	</form>
@@ -165,6 +171,7 @@
 		<input type="hidden" name="constants">
 		<input type="hidden" name="task_type">
 		<input type="hidden" name="last_cond">
+		<input type="hidden" name="method_name" value="simple">
 	</form>
 </body>
 </html>

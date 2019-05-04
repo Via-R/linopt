@@ -205,40 +205,108 @@ $(document).ready(function(){
 		$("#finalForm").submit()
 	});
 
-	$("#example").click(function(){
-		var cont = $("#objectiveFunc")
-		while(cont.find("input[type='number']").length > 2)
-			cont.parent().find(".del-el").click()
-		if(cont.find("input[type='number']").length === 1)
-			cont.parent().find(".add-el").click()
-		cont.find("input[name='obj_1']").val(-1)
-		cont.find("input[name='obj_2']").val(1)
-		cont.find("select").val("max")
+	var examples = {
+		"regular": [
+			[[-1, 1], "max"],
+			[[0, 1], ">=", 0],
+			[[1, 1], "<=", 1],
+			[[1, -4], ">=", -2],
+			[["<=", 40], [">=", -100]]
+		],
+		"big": [
+			[[4, 4, 2, 4 ,3, 1], "max"],
+			[[-3, 0, 2, 3, 3, 4], "=", 1],
+			[[3, -2, 1, 4, 3, -3], "=", 2],
+			[[4, -2, 1, -4, -1, -1], "=", 2],
+			[[2, 3, 3, 1, 2, -3], "=", 3],
+			[[">=", 0],[">=", 0],[">=", 0],[">=", 0],[">=", 0],[">=", 0]]
+		],
+		"error": [
+			[[1, 1], "max"],
+			[[1, 1], "<=", 1],
+			[[1, 1], ">=", 1],
+			[["arbitrary", 0], ["arbitrary", 0]]
+		],
+		"small": [
+			[[1, 1], "max"],
+			[[1, 1], "<=", 1],
+			[[1, 2], ">=", 1],
+			[["arbitrary", 0], ["arbitrary", 0]]
+		]
+	}
 
+	function setExample(exampleName){
+		var conditions = examples[exampleName]
+		var systemSize = conditions.length - 2
+		var objSize = conditions[0][0].length
+		var cont = $("#objectiveFunc")
+		
+		// Setting objective function
+		while(cont.find("input[type='number']").length > 1)
+			cont.parent().find(".del-el").click()
+
+		for (var i = 1; i < objSize; ++i)
+			cont.parent().find(".add-el").click()
+
+		var subCont = cont.find("input")
+		
+		for (var i = 0; i < objSize; ++i)
+			$(subCont[i]).val(conditions[0][0][i])
+
+		$(cont.find("select")).val(conditions[0][1])
+
+		//Setting main conditions 
 		cont = $("#mainConditions")
 		while(cont.find("section").length > 1)
 			$("#matrControl").find(".del-el").click()
 		while(cont.find("section div input").length > 1)
 			cont.find("section .del-el").click()
 		
-		cont.find("section .add-el").click()
-		$("#matrControl").find(".add-el").click()
+		for (var i = 1; i < systemSize; ++i){
+			$("#matrControl").find(".add-el").click()
+			innerCont = $(cont.find("section"))
+			innerCont = $(innerCont[innerCont.length - 1])
+			while(innerCont.find("div input").length > 1)
+				innerCont.find(".del-el").click()
+		}
+		for (var i = 1; i < systemSize + 1; ++i){
+			innerCont = $(cont.find("section")[i - 1])
+			for (var j = 1; j < conditions[i][0].length; ++j){
+				innerCont.find(".add-el").click()
+			}	
+			subCont = innerCont.find("div input")
+			for (var j = 0; j < conditions[i][0].length; ++j)
+				$(subCont[j]).val(conditions[i][0][j])
+			$(innerCont.find("select")).val(conditions[i][1])
+			$(innerCont.find("li > input")).val(conditions[i][2])
+		}
 
-		cont.find("input[name='matr1_2']").val(1)
-		cont.find("input[name='matr2_1']").val(1)
-		cont.find("input[name='matr2_2']").val(1)
-		cont.find("input[name='matr2_2']").parent().parent().parent().find("input[name='constant']").val(1)
-		cont.find("input[name='matr2_2']").parent().parent().parent().find("select").val("<=")
-		$("#matrControl .add-el").click()
-		cont.find("input[name='matr3_1']").val(1)
-		cont.find("input[name='matr3_2']").val(-4)
-		cont.find("input[name='matr3_2']").parent().parent().parent().find("input[name='constant']").val(-2)
-		
-		cont = $("#lastConditions")
-		$(cont.find(".triple-cell")[0]).find("input").val(40)
-		$(cont.find(".triple-cell")[0]).find("select").val("<=")
-		$(cont.find(".triple-cell")[1]).find("select").val(">=")
-		$(cont.find(".triple-cell")[1]).find("input").val(-100)
-		$(cont.find(".triple-cell")[1]).find("input").trigger("input")
+		// Setting last conditions
+		cont = $("#lastConditions .triple-cell")
+		var lastIndex = conditions.length - 1
+		for (var i = 0; i < conditions[lastIndex].length; ++i){
+			$(cont[i]).find("select").val(conditions[lastIndex][i][0])
+			$(cont[i]).find("input").val(conditions[lastIndex][i][1])
+			$(cont[i]).find("input").trigger("input")
+		}
+	}
+
+	$("#exampleRegular").click(function(){
+		setExample("regular")
+	})
+	$("#exampleBig").click(function(){
+		setExample("big")
+	})
+	$("#exampleError").click(function(){
+		setExample("error")
+	})
+	$("#exampleSmall").click(function(){
+		setExample("small")
+	})
+
+	$("a").click(function(){
+		$("input[name='method_name']").val($(this).attr("name"))
+		$("a").removeClass("chosen-type")
+		$(this).addClass("chosen-type")
 	})
 });

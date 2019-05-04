@@ -88,6 +88,7 @@ form {
 
             .align-right {
                 float:right;
+                margin-right: 5px;
             }
 
             textarea{
@@ -183,8 +184,8 @@ form {
         cursor: pointer;
         border: none;
         border-right: 2px solid $light_blue;
-        margin: 5px 0 5px 0;
-        padding: 0 10px;
+        margin: 5px 2px 5px 4px;
+        padding: 3px 10px 0 10px;
         text-align: center;
         text-align-last: center;
         @include appearance(none);
@@ -205,28 +206,24 @@ form {
         border-left: none;
     }
     select {
-        padding: 5px;
+        padding: 3px 5px 0 5px;
     }
 }
 
 #objectiveFunc {
-    li:last-child {
+    #mainDoubleCell {
         div {
             border: none;
-            padding: 0;
+            padding: 0 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-
-            span {
-                font-size: 1.2em;
-                margin-top: -5px;
-            }
         }
 
         select {
             border-left: 2px solid $light_blue;
             border-right: none;
+            padding-top: 1px;
         }
     }
 }
@@ -292,6 +289,51 @@ button:focus{
     @include box-shadow(0 0 10px 1px #227093)
 }
 
-#matrControl{
+#matrControl {
     margin-top: 10px;
+}
+
+#objectiveFunc #mainDoubleCell select:focus, select:focus {
+    border-radius: 8px;
+    border: 1px solid $main_blue;
+    background-color: $light_blue;
+}
+
+#lastLine {
+    display: flex;
+    justify-content: space-between;
+    div {
+        display: flex;
+        button {
+            margin-left: 5px;
+        }
+        #examplesText {
+            display: flex;
+            flex-flow: column;
+            justify-content: center;
+            span { 
+                font-weight: bold; 
+                margin-right: 5px;
+            }
+        }
+    }
+}
+
+#headerLine {
+    a {
+        color: $dark_blue;
+        cursor: pointer;
+        text-decoration: none;
+
+        &:visited {
+            color: $dark_blue;
+        }
+        &:hover {
+            color: $purple_blue;
+        }
+        &.chosen-type {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    }
 }
