@@ -39,51 +39,63 @@ article {
     /* line 46, solver/static/solver/styles/result.scss */
     article table thead th:first-child, article table tbody td:first-child {
       border-right: 2px solid rgba(52, 152, 219, 0.4); }
-    /* line 51, solver/static/solver/styles/result.scss */
+    /* line 50, solver/static/solver/styles/result.scss */
+    article table thead tr:first-child td:nth-last-child(2) {
+      border-left: 0; }
+    /* line 55, solver/static/solver/styles/result.scss */
     article table tbody tr:nth-last-child(2) td:first-child, article table tbody tr:last-child td:first-child {
       border-right: 0; }
-    /* line 56, solver/static/solver/styles/result.scss */
+    /* line 58, solver/static/solver/styles/result.scss */
+    article table tbody tr:nth-last-child(2) td:nth-last-child(2), article table tbody tr:last-child td:nth-last-child(2) {
+      border-left: 0; }
+    /* line 63, solver/static/solver/styles/result.scss */
     article table tbody tr:nth-last-child(2) td {
       border-top: 2px solid rgba(52, 152, 219, 0.4); }
-    /* line 60, solver/static/solver/styles/result.scss */
+    /* line 67, solver/static/solver/styles/result.scss */
     article table > tr:first-child td {
       border-bottom: 2px solid rgba(52, 152, 219, 0.4); }
-    /* line 64, solver/static/solver/styles/result.scss */
+    /* line 71, solver/static/solver/styles/result.scss */
     article table tr:nth-last-child(2) td:nth-last-child(3) {
       border-left: none; }
-    /* line 68, solver/static/solver/styles/result.scss */
+    /* line 75, solver/static/solver/styles/result.scss */
     article table tr:nth-last-child(2) td:last-child {
       border-top: none; }
-    /* line 72, solver/static/solver/styles/result.scss */
+    /* line 79, solver/static/solver/styles/result.scss */
     article table tr:nth-last-child(2) td:nth-last-child(3) {
       border-left: 2px solid rgba(52, 152, 219, 0.4); }
-    /* line 76, solver/static/solver/styles/result.scss */
+    /* line 83, solver/static/solver/styles/result.scss */
     article table td, article table th {
       padding: 8px;
       text-align: center; }
-    /* line 81, solver/static/solver/styles/result.scss */
+    /* line 88, solver/static/solver/styles/result.scss */
     article table td:nth-child(2), article table th:nth-child(2) {
       border-right: 2px solid rgba(52, 152, 219, 0.4); }
-    /* line 85, solver/static/solver/styles/result.scss */
+    /* line 92, solver/static/solver/styles/result.scss */
     article table td:nth-last-child(3), article table th:nth-last-child(3) {
       border-left: 2px solid rgba(52, 152, 219, 0.4); }
-  /* line 90, solver/static/solver/styles/result.scss */
+    /* line 96, solver/static/solver/styles/result.scss */
+    article table th:nth-last-child(2), article table td:nth-last-child(2) {
+      border-left: 2px solid rgba(52, 152, 219, 0.4); }
+    /* line 100, solver/static/solver/styles/result.scss */
+    article table tr:last-child td {
+      border-top: 2px solid rgba(52, 152, 219, 0.4); }
+  /* line 105, solver/static/solver/styles/result.scss */
   article span {
     font-size: 1.2em;
     position: relative;
     top: -2px; }
 
-/* line 97, solver/static/solver/styles/result.scss */
+/* line 112, solver/static/solver/styles/result.scss */
 section > div {
   font: 16px Arial, Helvetica, sans-serif;
   margin: 30px 20px 0 20px; }
-  /* line 101, solver/static/solver/styles/result.scss */
+  /* line 116, solver/static/solver/styles/result.scss */
   section > div:last-child {
     text-align: center;
     font-size: 1.3em;
     font-style: italic; }
 
-/* line 108, solver/static/solver/styles/result.scss */
+/* line 123, solver/static/solver/styles/result.scss */
 .frac {
   display: inline-block;
   position: relative;
@@ -91,22 +103,25 @@ section > div {
   letter-spacing: 0.001em;
   text-align: center;
   margin: 3px; }
-  /* line 116, solver/static/solver/styles/result.scss */
+  /* line 131, solver/static/solver/styles/result.scss */
+  .frac span {
+    font-size: 0.85em; }
+  /* line 135, solver/static/solver/styles/result.scss */
   .frac span.bottom {
     border-top: thin solid black; }
-  /* line 120, solver/static/solver/styles/result.scss */
+  /* line 139, solver/static/solver/styles/result.scss */
   .frac span.symbol {
     display: none; }
-  /* line 124, solver/static/solver/styles/result.scss */
+  /* line 143, solver/static/solver/styles/result.scss */
   .frac > span {
     display: block;
     padding: 0.1em; }
 
-/* line 130, solver/static/solver/styles/result.scss */
+/* line 149, solver/static/solver/styles/result.scss */
 .empty-row {
   display: none; }
 
-/* line 133, solver/static/solver/styles/result.scss */
+/* line 152, solver/static/solver/styles/result.scss */
 .empty-cell {
   display: block;
   padding: 0;

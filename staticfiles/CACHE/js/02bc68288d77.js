@@ -105,4 +105,32 @@ $("#exampleError").click(function(){setExample("error")})
 $("#exampleSmall").click(function(){setExample("small")})
 $("a").click(function(){$("input[name='method_name']").val($(this).attr("name"))
 $("a").removeClass("chosen-type")
-$(this).addClass("chosen-type")})});
+$(this).addClass("chosen-type")})
+$("#convertToDual").click(function(){var objFunction=[]
+var taskType="min"
+var matrix=[]
+var constants=[]
+var conditions=[]
+var inequalities=[]
+var cont=$("#lastConditions .triple-cell")
+for(var i=0;i<cont.length;++i){var sign=""
+var num=0
+sign=$($(cont[i]).find("select")).val()
+num=$($(cont[i]).find("input")).val()===""?0:parseFloat($($(cont[i]).find("input")).val())
+conditions.push([sign,num])}
+for(var i=0;i<conditions.length;++i){}
+cont=$("#objectiveFunc").find("div input")
+for(var i=0;i<cont.length;++i){var num=$(cont[i]).val()===""?0:parseFloat($(cont[i]).val())
+objFunction.push(num)}
+cont=$("#objectiveFunc").find("select")
+if($(cont).val()==="max")
+taskType="max"
+cont=$("#mainConditions").find("section")
+for(var i=0;i<cont.length;++i){var innerCont=$(cont[i]).find("div input")
+var localArr=[]
+for(var j=0;j<innerCont.length;++j){var num=$(innerCont[j]).val()===""?0:parseFloat($(innerCont[j]).val())
+localArr.push(num)}
+matrix.push(localArr)
+var num=$($(cont[i]).find("li > input")).val()===""?0:parseFloat($($(cont[i]).find("li > input")).val())
+constants.push(num)
+inequalities.push($($(cont[i]).find(".double-cell select")).val())}})});

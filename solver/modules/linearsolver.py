@@ -459,6 +459,7 @@ class Solver:
 			self.writer.log(basis=None)
 		else:
 			self.writer.log(basis=result)
+
 		return result
 
 	def _set_basis_koef(self):
@@ -1107,6 +1108,9 @@ class DualSimplexSolver(Solver):
 		self._make_conditions_equalities()
 		self.thetas = ["-"] * len(self.objective_function)
 		self.basis = self._get_basis_vectors_nums()
+		# Уточнить нужно ли тут это делать, пока что если расскомментировать, то в примере "small" выходит, что область пустая
+		# но если не расскомментировать, то ответом выбирается не та вершина
+		# self.previous_basis_sets.append(set(self.basis))
 		for i in self.basis:
 			if i == -1:
 				self._add_artificial_basis()
