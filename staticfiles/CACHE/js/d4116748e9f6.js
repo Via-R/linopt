@@ -21,7 +21,8 @@ $(this).prop("disabled",true)}
 function adjustLastConditions(){maxQuantity=0;for(var key in counters){if(counters.hasOwnProperty(key)&&key!=="last"){if(counters[key]>maxQuantity)
 maxQuantity=counters[key]}}
 if(counters["last"]<maxQuantity){block=`<li><div class="triple-cell"><div>x<sub>{0}</sub></div><select><option value=">=">&ge;</option><option value="<=">&le;</option><option value="arbitrary">?</option></select><input type="number"max="999999"name="constant"placeholder="0"></div></li>`.format(++counters["last"]);$("#lastConditions").append(block);$('input[type="number"]').off().on('input',triggerFunctionInput).trigger('input');}
-else if(counters["last"]>maxQuantity){el=$("#lastConditions li:last-child");el.remove();counters["last"]--;}}
+else if(counters["last"]>maxQuantity){el=$("#lastConditions li:last-child");el.remove();counters["last"]--;}
+$("#lastConditions select").off().change(selectEvent)}
 rowCount=2;function eventAddRow(){rowEl=`<section><ul><li><div class="double-cell"><input type="number"max="999999"name="matr{0}_1"placeholder="0"value=""><div>x<sub>1</sub></div></div></li><li><div class="divider">+</div><div class="double-cell"><input type="number"max="999999"name="matr{1}_2"placeholder="0"value=""><div>x<sub>2</sub></div></div></li><li class="double-cell"><select><option value=">=">&ge;</option><option value="<=">&le;</option><option value="=">=</option></select><input type="number"max="999999"name="constant"placeholder="0"value=""></li></ul><div class="quantity-control"><button type="button"class="add-el">+</button><button type="button"class="del-el">-</button></div></section>`.format(++rowCount,rowCount)
 counters["matr"+rowCount]=2;$("#matrControl").before(rowEl)
 $("section .add-el").off().click(eventAddDoublecell)
@@ -35,10 +36,16 @@ var row=$(container[container.length-1]);matrRowName=row.find("input").attr("nam
 row.remove()
 --rowCount;if(rowCount===1)
 $(this).prop("disabled",true)}
+function selectEvent(){el=$(this)
+if(el.val()==="arbitrary"){el.parent().find("input").prop('disabled',true);el.parent().find("input").val(0)
+el.parent().find("input").trigger('input');}
+else{if(el.parent().find("input").attr('disabled'))
+el.parent().find("input").prop("disabled",false)}}
 $("section .add-el").click(eventAddDoublecell)
 $("section .del-el").click(eventDeleteDoublecell)
 $("#matrControl .add-el").click(eventAddRow)
 $("#matrControl .del-el").click(eventDelRow)
+$("#lastConditions select").change(selectEvent)
 $("#submit").click(function(){var container=$("#objectiveFunc input[type='number']")
 var objString="";for(var i=0;i<container.length;i++){if(container[i].value==="")
 $(container[i]).val(0)
@@ -106,6 +113,7 @@ $("#exampleSmall").click(function(){setExample("small")})
 $("a").click(function(){$("input[name='method_name']").val($(this).attr("name"))
 $("a").removeClass("chosen-type")
 $(this).addClass("chosen-type")})
+function transposeArray(array,arrayLength){var newArray=[];for(var i=0;i<arrayLength;i++){newArray.push([]);};for(var i=0;i<array.length;i++){for(var j=0;j<arrayLength;j++){newArray[j].push(array[i][j]);};};return newArray;}
 $("#convertToDual").click(function(){var objFunction=[]
 var taskType="min"
 var matrix=[]
@@ -118,7 +126,8 @@ var num=0
 sign=$($(cont[i]).find("select")).val()
 num=$($(cont[i]).find("input")).val()===""?0:parseFloat($($(cont[i]).find("input")).val())
 conditions.push([sign,num])}
-for(var i=0;i<conditions.length;++i){}
+for(var i=0;i<conditions.length;++i){if(conditions[i][0]==="<="||conditions[i][1]!==0){alert("Утворення двоїстої задачі вимагає обмеження змінних вигляду \">= 0\" або \"?\"")
+return false}}
 cont=$("#objectiveFunc").find("div input")
 for(var i=0;i<cont.length;++i){var num=$(cont[i]).val()===""?0:parseFloat($(cont[i]).val())
 objFunction.push(num)}
@@ -133,4 +142,40 @@ localArr.push(num)}
 matrix.push(localArr)
 var num=$($(cont[i]).find("li > input")).val()===""?0:parseFloat($($(cont[i]).find("li > input")).val())
 constants.push(num)
-inequalities.push($($(cont[i]).find(".double-cell select")).val())}})});
+inequalities.push($($(cont[i]).find(".double-cell select")).val())}
+console.log(objFunction)
+console.log(taskType)
+console.log(matrix)
+console.log(constants)
+console.log(conditions)
+console.log(inequalities)
+for(var i=0;i<inequalities.length;++i){if((inequalities[i]==="<="&&taskType==="min")||(inequalities[i]===">="&&taskType==="max")){matrix[i]=matrix[i].map(function(el){return-el;});constants[i]*=-1
+inequalities[i]="<="}}
+matrix=transposeArray(matrix,matrix[0].length)
+console.log("--------------")
+var newConditions=[],newConstants=[],newObjFunc=[],newInequalities=[],newTaskType="max"
+for(var i=0;i<inequalities.length;++i){if(inequalities[i]==="=")
+newConditions.push(["arbitrary",0])
+else
+newConditions.push([">=",0])}
+for(var i=0;i<conditions.length;++i){newConstants.push(objFunction[i])
+if(conditions[i][0]===">="){var sign=taskType==="min"?"<=":">="
+newInequalities.push(sign)}
+else
+newInequalities.push("=")}
+for(var i=0;i<constants.length;++i){newObjFunc.push(constants[i])}
+if(taskType==="max")
+newTaskType="min"
+console.log(newObjFunc)
+console.log(newTaskType)
+console.log(matrix)
+console.log(newConstants)
+console.log(newConditions)
+console.log(newInequalities)
+var result=[]
+result.push([newObjFunc,newTaskType])
+for(var i=0;i<matrix.length;++i){result.push([matrix[i],newInequalities[i],newConstants[i]])}
+result.push(newConditions)
+console.log(result)
+examples["dual"]=result
+setExample("dual")})});
