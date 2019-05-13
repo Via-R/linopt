@@ -78,7 +78,7 @@ class InputParser:
 
 		inner_text = inner_text.replace('\t', '').replace(' ', '').split("\n")
 
-		#Обробка першого рядка з цільовою функцією
+		# Обробка першого рядка з цільовою функцією
 		counter = 0
 		first_line = inner_text[counter]
 		while(first_line == '' or first_line[0] == '#'):
@@ -101,7 +101,7 @@ class InputParser:
 				last_cond = line
 				break
 
-			#Обробка умов та заповнення відповідної їм матриці
+			# Обробка умов та заповнення відповідної їм матриці
 			line = InputParser._format_to_math_form(line[1:])
 			for i in InputParser.op_list:
 				if i in line:
@@ -133,9 +133,9 @@ class InputParser:
 		self.main_matrix = np.array(raw_matrix)
 		self.constants_vector = np.array(raw_constants)
 
-		#Обробка рядка з обмеженнями змінних
+		# Обробка рядка з обмеженнями змінних
 		self.last_conditions = self._parse_last_cond(last_cond)
-		#Обробка рядка з бажаним результатом розв'язку (використовується лише в тестуванні)
+		# Обробка рядка з бажаним результатом розв'язку (використовується лише в тестуванні)
 		self.result_list = []
 		self.result = ""
 		self.expected_error = ""
@@ -171,10 +171,10 @@ class InputParser:
 		Індекс кожного Q відповідає декрементованому індексу відповідної змінної.
 		Не підтримує некоректну вхідну інформацію та константи в цільовій функції."""
 
-		raw_array = {} #Результуючий масив, але невпорядкований
+		raw_array = {} # Результуючий масив, але невпорядкований
 
-		#Розділення строки, використовуючи "+" як розділювач, з подальшим записом інформації в модель цільової функції в змінній first_line_vect
-		#Змінна task_type містить строку ("max" або "min"), в залежності від вхідних даних
+		# Розділення строки, використовуючи "+" як розділювач, з подальшим записом інформації в модель цільової функції в змінній first_line_vect
+		# Змінна task_type містить строку ("max" або "min"), в залежності від вхідних даних
 		line, task_type = line[:line.find("=>")], line[line.find("=>")+2:]
 		line = line[0] + line[1:].replace('-', '+-')
 		op_arr = line.split('+')
@@ -378,24 +378,6 @@ class Solver:
 				if self.inequalities[i] != "=":
 					self.inequalities[i] = "<=" if self.inequalities[i] == ">=" else ">="
 
-	# def _is_basis_variable_present(self, ind):
-	# 	"""Перевіряє чи потрібно вводити балансну змінну"""
-
-	# 	for i in range(len(self.matrix[ind])):
-	# 		if self.matrix[ind][i] != 1:
-	# 			continue
-	# 		for j in [k for k in range(len(self.matrix)) if k != ind]:
-	# 			if self.matrix[j][i] != 0:
-	# 				break
-	# 		else:
-	# 			return True
-	# 	return False
-
-		# for j in range(len(self.matrix[i])):
-			# if self.matrix[i][j] == 1:
-				# for k in range(len(self.matrix)):
-					# pass
-
 	def _make_conditions_equalities(self, canonical=False):
 		"""Зводить всі нерівності умов до рівностей.
 
@@ -579,8 +561,6 @@ class Solver:
 
 		self.writer.log(sub_queue=self.substitution_queue)
 
-		prvect(self.substitution_queue)
-		prvect(self.arbitrary_pairs)
 		for i in self.substitution_queue:
 			exec("self.final_result[i[0]]" + i[1])
 			if "*" in i[1]:
@@ -826,7 +806,6 @@ class SimplexSolver(Solver):
 		self.initial_variables_quantity = len(self.matrix[0])
 		if not self._normalize_conditions():
 			raise SolvingError("В заданих умовах обмеження змінних містять строгі знаки нерівностей або знак рівності - дані вхідні дані некоректні для симплекс методу")
-		# prmatr(self.matrix)
 		self._make_constants_positive()
 		self._make_conditions_equalities(True)
 		self.basis = self._get_basis_vectors_nums()
@@ -1079,6 +1058,7 @@ class DualSimplexSolver(Solver):
 
 		revert = -1 if self.task_type == "min" else 1
 		self.result = obj_func_val * revert
+		print("FULL VECTOR:")
 		prvect(self.final_result)
 		self._check_for_ambiguous_result()
 		self.writer.initiate("final")
@@ -1087,7 +1067,6 @@ class DualSimplexSolver(Solver):
 			vect = self.result_vect,
 			obj_val = self.result
 		)
-		# self._check_for_empty_allowable_area()
 
 	def _check_if_basis_repeats(self, basis_set):
 		"""Перевіряє чи обраний базис вже був до цього"""
@@ -1108,8 +1087,7 @@ class DualSimplexSolver(Solver):
 		self._make_conditions_equalities()
 		self.thetas = ["-"] * len(self.objective_function)
 		self.basis = self._get_basis_vectors_nums()
-		# Уточнить нужно ли тут это делать, пока что если расскомментировать, то в примере "small" выходит, что область пустая
-		# но если не расскомментировать, то ответом выбирается не та вершина
+		# Можлива перевірка на те, щоб не обирався в майбутньому перший "непідхожий" базис
 		# self.previous_basis_sets.append(set(self.basis))
 		for i in self.basis:
 			if i == -1:
@@ -1133,16 +1111,13 @@ class DualSimplexSolver(Solver):
 			self.previous_basis_sets.append(set(self.basis))
 
 			self._choose_row()
-			# self._count_thetas()
-			# prmatr(self.matrix)
-			# prvect(self.thetas)
 			counter+=1
 
 		self._cancel_subtitution()
 		self._final_preparations()
-		print("RESULT:")
+		print("RESULTING VECTOR:")
 		prvect(self.result_vect)
-		print("Obj:", self.result)
+		print("OBJECTIVE FUNCTION VALUE:", self.result)
 
 
 # ------ Logger class section ------
@@ -1165,6 +1140,8 @@ class Logger:
 		self.task_type = "simple"
 
 	def set_task_type(self, task_type):
+		"""Встановлює тип задачі."""
+
 		self.task_type = task_type
 
 	def initiate(self, func_name):
@@ -1302,6 +1279,7 @@ class Logger:
 
 	def get_logs(self):
 		"""Повертає усі накопичені методами класу записи."""
+
 		reps = {
 			"\t": "",
 			"\n": "<br>",
@@ -1729,6 +1707,8 @@ class Logger:
 			self._add_entry(text_part)
 
 	def _check_first_compatible_basis(self, input_data = ""):
+		"""Виведення перевірки чи є перший базис підхожим."""
+
 		if input_data == "":
 			text_part = self._bold("Перевіряємо, чи розв'язується задана задача модифікованим симплекс методом (коефіцієнти цільової функції мають бути невід'ємні):")
 			self._add_entry(text_part)
@@ -1741,6 +1721,8 @@ class Logger:
 			self._add_entry(text_part)
 
 	def _find_first_compatible_basis(self, input_data = ""):
+		"""Виведення процеса пошуку підхожого базису."""
+
 		if input_data == "":
 			text_part = self._bold("Утворюємо двоїсту задачу та виписуємо її систему:")
 			self._add_entry(text_part)
@@ -1748,7 +1730,6 @@ class Logger:
 		if "system" in input_data and "constants" in input_data:
 			text_part = ""
 			for row_ind in range(len(input_data["system"])):
-				# _vector_to_math(self, expression, operation, right_part, constant = 0, custom_letter = None):
 				row = input_data["system"][row_ind]
 				constant = input_data["constants"][row_ind]
 				text_part += "{}) ".format(row_ind + 1) + self._vector_to_math(row, "<=", constant, 0, "y") + "\n"
@@ -1768,12 +1749,16 @@ class Logger:
 			self._add_entry(text_part)
 
 	def _set_first_compatible_basis(self, input_data = ""):
+		"""Виведення інформації про перехід до підхожого базиса."""
+
 		if input_data == "":
 			text_part = self._bold("Змінюємо початковий базис на підхожий (додатково домножуємо рядок з дельтами на -1):\n")
 			self._add_entry(text_part)
 			return
 
 	def _finalize_first_compatible_basis(self, input_data = ""):
+		"""Виведення додаткової інформації про завершення встановлення підхожого базиса."""
+
 		if input_data == "":
 			text_part = self._bold("Підхожий базис утворено.")
 			self._add_entry(text_part)
@@ -1784,6 +1769,8 @@ class Logger:
 			self._add_entry(self.draw_table(input_data["table"]))
 
 	def _choosing_row(self, input_data = ""):
+		"""Виведення інформації про вибір ведучого рядка."""
+
 		if input_data == "":
 			text_part = self._bold("Обираємо ведучий рядок:")
 			self._add_entry(text_part)
@@ -1798,6 +1785,8 @@ class Logger:
 			self._add_entry(text_part)
 
 	def _counting_thetas(self, input_data = ""):
+		"""Виведення розрахунків оцінок "тета"."""
+
 		if input_data == "":
 			text_part = self._bold("Розраховуємо відношення елементів рядка з дельтами до елементів ведучого рядка по модулю:")
 			self._add_entry(text_part)
@@ -1822,6 +1811,8 @@ class Logger:
 			self._add_entry(self.draw_table(input_data["table"], [{"name": "thetas", "coords": -1}]))
 
 	def _dual_min_theta(self, input_data = ""):
+		"""Виведення пошуку мінімальної оцінки "дельта"."""
+
 		if input_data == "":
 			text_part = self._bold("Обираємо ведучий стовпчик, що відповідає найменшому додатньому елементу рядка с тетами:")
 			self._add_entry(text_part)
@@ -1834,8 +1825,6 @@ class Logger:
 			text_part = "Найменший додатній елемент {}, йому відповідає змінна {}, обираємо її стовпчик ведучим.".format(input_data["choice"], self._wrap_variable(input_data["ind"]))
 			self._add_entry(text_part)
 			return
-
-
 
 
 # ------ Custom exception section ------
@@ -1909,6 +1898,9 @@ class TestCommonLinearMethods(unittest.TestCase):
 			self.input_info["data"],
 			self.input_info["mute"]
 		)
+		dummy.basis = [0, 1, 2, 3]
+		dummy.objective_function = [1, 1, 1, 1]
+		dummy.basis_koef = [1, 1, 1, 1]
 		dummy._make_basis_column()
 		test_matrix = np.array([
 		 	[1, 2, -3, -1],
@@ -2236,12 +2228,6 @@ class TestSimplexMethod(unittest.TestCase):
 		dummy._final_preparations()
 		self.assertEqual(-4, dummy.result)
 
-class TestDualSimplexMethod(unittest.TestCase):
-	"""Tests for Dual Simplex method"""
-
-	def test_setting_first_basis(self):
-		pass
-
 def help():
 	help_str = """Можливі аргументи:
 	
@@ -2252,28 +2238,10 @@ def help():
 
 if __name__ == "__main__":
 	if len(sys.argv) == 1:
-
-		print("Okay")
 		# solver = SimplexSolver("file", 'input')
 		# f = open("output.html", "w")
 		# f.write(solver.get_result())
 
-		task = '''
-	2x[1] + x[2] - 2x[3] => min
-
-|x[1] + x[2] -x[2]>=8
-|x[1] -x[2] +2x[2]>=2
-|-2x[1]-8x[2]+3x[3]>=1
-x[1]>=0,x[2]>=0,x[3]>=0'''
-
-		task1 = '''
-2x[1] + x[2] - 2x[3] => min
-
-|x[1] + x[2] -x[2]>=8
-|x[1] -x[2] +2x[2]>=2
-|-2x[1]-8x[2]+3x[3]>=1
-x[1]>=0,x[2]>=0,x[3]>=0
-		'''
 
 		task = '''
 4x[1] +4x[2] +2x[3] +4x[4] +3x[5] +x[6]=>max
